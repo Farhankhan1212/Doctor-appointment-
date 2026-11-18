@@ -8,21 +8,24 @@ export const auth = (...rules: string[]) => async (req: Request, res: Response, 
     try {
         const token = req.headers.authorization;
         if (!token) {
-            throw new ApiError(404, "Token is not Found !!")
+            throw new ApiError(401, "Authentication token is required");
         }
+
         let verifiedUser;
         try {
             verifiedUser = await JwtHelper.verifyToken(token, config.jwt.secret as Secret);
         } catch (error) {
-            throw new ApiError(403, "User is not Found !!")
+            throw new ApiError(401, "Invalid or expired authentication token");
         }
+
         req.user = verifiedUser;
 
         if (rules.length && !rules.includes(verifiedUser.role)) {
-            throw new ApiError(403, "You are not Authorised !!")
+            throw new ApiError(403, "You are not authorised to access this resource");
         }
-        next();
+
+        return next();
     } catch (error) {
-        next(error)
+        return next(error);
     }
-}
+};
