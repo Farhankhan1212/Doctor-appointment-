@@ -17,23 +17,31 @@ app.use(express.static('public'));
 
 app.get('/favicon.ico', (req: Request, res: Response) => {
     res.status(204).end();
-})
+});
 
 app.get('/', (req: Request, res: Response) => {
-    res.send(config.clientUrl)
-})
+    res.send(config.clientUrl);
+});
 
 app.use('/api/v1', router);
+
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+    if (res.headersSent) {
+        return next(err);
+    }
+
     if (err instanceof ApiError) {
-        res.status(err.statusCode).json({ success: false, message: err.message })
-    } else {
-        res.status(httpStatus.NOT_FOUND).json({
+        return res.status(err.statusCode).json({
             success: false,
-            message: 'Something Went Wrong',
+            message: err.message,
         });
     }
-    next();
-})
+
+    // Unexpected server errors must not be reported as 404 Not Found.
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: 'Internal Server Error',
+    });
+});
 
 export default app;
