@@ -11,7 +11,7 @@ const clientUrl =
 
 export default {
     env: process.env.NODE_ENV,
-    port: process.env.PORT,
+    port: Number(process.env.PORT) || 5000,
     default_doctor_pass: process.env.DOCTOR_PASS,
     clientUrl: clientUrl,
 
