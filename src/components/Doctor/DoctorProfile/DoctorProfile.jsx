@@ -10,7 +10,7 @@ import SearchContent from '../SearchDoctor/SearchContent';
 import { Tabs } from 'antd';
 import OverView from './OverView';
 import Location from './Location';
-import Review from './Review';
+import Reviews from './Reviews';
 import Availibility from './Availibility';
 
 const DoctorProfile = () => {

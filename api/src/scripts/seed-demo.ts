@@ -1,4 +1,4 @@
-// DEMO DATA for portfolio / interview. Everything here is fictional sample data.
+﻿// DEMO DATA for portfolio / interview. Everything here is fictional sample data.
 // Creates: 30 Lucknow-style doctors (approved), weekly time slots, 6 demo patients,
 // and reviews so ratings on the doctor cards are real numbers.
 // Safe to run again: existing emails are skipped.
@@ -10,7 +10,7 @@
 //   patient: patient1@demo.com     / Patient@123
 import prisma from '../shared/prisma';
 import bcrypt from 'bcrypt';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../shared/enums';
 
 const DOCTOR_PASSWORD = 'Doctor@123';
 const PATIENT_PASSWORD = 'Patient@123';

@@ -5,7 +5,13 @@ import { AppointmentService } from "./appointment.service";
 import { Appointments, Patient } from "@prisma/client";
 
 const createAppointment = catchAsync(async (req: Request, res: Response) => {
-    const result = await AppointmentService.createAppointment(req.body);
+    let result;
+    try {
+        result = await AppointmentService.createAppointment(req.body);
+    } catch (e: any) {
+        console.log("=== BOOKING ERROR ===", e?.message || e);
+        throw e;
+    }
     sendResponse(res, {
         statusCode: 200,
         message: 'Successfully Appointment Created !!',

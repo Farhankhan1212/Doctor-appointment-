@@ -1,10 +1,11 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
+import mongoose from "mongoose";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { AuthService } from "./auth.service";
 import config from "../../../config";
 import path from 'path';
-import prisma from "../../../shared/prisma";
+import { Doctor, UserVerfication } from "../../../shared/models";
 import ApiError from "../../../errors/apiError";
 import httpStatus from "http-status";
 import moment from "moment";
@@ -47,45 +48,28 @@ const PasswordResetConfirm = catchAsync(async (req: Request, res: Response) => {
 
 const VerifyUser = catchAsync(async (req: Request, res: Response) => {
     const { userId } = req.params;
-    const isUserExist = await prisma.doctor.findUnique({
-        where: {
-            id: userId
-        }
-    })
+    if (!mongoose.isValidObjectId(userId)) {
+        throw new ApiError(httpStatus.NOT_FOUND, "User is not found !!");
+    }
+    const isUserExist = await Doctor.findById(userId);
     if (!isUserExist) {
         throw new ApiError(httpStatus.NOT_FOUND, "User is not found !!");
     }
-    const getVerficationUser = await prisma.userVerfication.findFirst({
-        where: {
-            userId: userId
-        }
-    })
+    const getVerficationUser = await UserVerfication.findOne({ userId: userId });
     if (getVerficationUser) {
         const expiresAt = moment(getVerficationUser.expiresAt);
         const currentTime = moment();
-        // check currenttime is before then expires Time
         const isWithinNext6Hours = currentTime.isBefore(expiresAt);
 
         if (isWithinNext6Hours) {
-            await prisma.$transaction(async (tx) => {
-                await tx.doctor.update({
-                    where: {
-                        id: isUserExist.id
-                    },
-                    data: {
-                        verified: true
-                    }
-                });
-                await tx.userVerfication.delete({
-                    where: {
-                        id: getVerficationUser.id
-                    }
-                })
-            })
+            await Doctor.updateOne({ _id: isUserExist._id }, { verified: true });
+            await UserVerfication.deleteOne({ _id: getVerficationUser._id });
             res.redirect('/api/v1/auth/verified');
         } else {
             res.redirect('/api/v1/auth/expired/link');
         }
+    } else {
+        res.redirect(isUserExist.verified ? '/api/v1/auth/verified' : '/api/v1/auth/expired/link');
     }
 })
 

@@ -1,7 +1,7 @@
-import httpStatus from "http-status";
+﻿import httpStatus from "http-status";
 import ApiError from "../../../errors/apiError";
 import prisma from "../../../shared/prisma";
-import { UserRole } from "@prisma/client";
+import { UserRole } from "../../../shared/enums";
 import bcrypt from 'bcrypt';
 
 export const create = async (payload: any): Promise<any> => {

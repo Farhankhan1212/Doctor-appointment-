@@ -1,8 +1,8 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { PatientService } from "./patient.service";
-import { Patient } from "@prisma/client";
+type Patient = Record<string, any>;
 
 const createPatient = catchAsync(async (req: Request, res: Response) => {
     await PatientService.createPatient(req.body);

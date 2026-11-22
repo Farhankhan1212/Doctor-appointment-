@@ -1,7 +1,2 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient({
-    errorFormat: 'minimal'
-});
-
+const prisma: any = {};
 export default prisma;

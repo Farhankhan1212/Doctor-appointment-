@@ -9,7 +9,6 @@
     "lint:check": "eslint --ignore-path .eslintignore --ext .js,.ts .",
     "build": "tsc && copyfiles -u 1 template/* dist/template",
     "lint:fix": "eslint . --fix",
-    "postinstall": "prisma generate",
     "prettier:check": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
     "prettier:fix": "prettier --write .",
     "lint-prettier": "npm run lint:check && npm run prettier:check",
@@ -18,7 +17,6 @@
   "author": "ujjal",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^5.6.0",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.19.0",
     "cloudinary": "^1.41.3",
@@ -32,9 +30,9 @@
     "http-status": "^1.7.3",
     "jsonwebtoken": "^9.0.0",
     "moment": "^2.29.4",
+    "mongoose": "^9.12.3",
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.9.9",
-    "server": "file:",
     "uuid": "^9.0.1",
     "winston": "^3.10.0",
     "winston-daily-rotate-file": "^4.7.1",
@@ -57,9 +55,11 @@
     "eslint-plugin-prettier": "^5.0.0",
     "npm": "^9.8.0",
     "prettier": "^3.0.0",
-    "prisma": "^5.6.0",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.3.2"
   },
-  "keywords": []
+  "keywords": [],
+  "allowScripts": {
+    "bcrypt@5.1.1": true
+  }
 }

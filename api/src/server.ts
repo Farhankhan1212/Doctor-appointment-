@@ -1,30 +1,39 @@
-import {Server} from 'http';
+import { Server } from 'http';
 import app from "./app";
 import config from './config';
+import { connectDB } from './shared/db';
 
-async function bootstrap(){
-    const server:Server = app.listen(config.port, () =>{
+async function bootstrap() {
+    // connect to MongoDB first, start the server only if it works
+    try {
+        await connectDB();
+    } catch (error) {
+        console.error('MongoDB connection failed', error);
+        process.exit(1);
+    }
+
+    const server: Server = app.listen(config.port, () => {
         console.log(`Server running on port ${config.port}`);
     });
 
-    const exitHandler = () =>{
-        if(server){
-            server.close(() =>{
+    const exitHandler = () => {
+        if (server) {
+            server.close(() => {
                 console.log('Server Close')
             })
         }
     };
 
-    const unexpectedHandler = () =>{
+    const unexpectedHandler = () => {
         console.log('Handler Error');
         exitHandler();
     }
     process.on('uncaughtException', unexpectedHandler);
     process.on('unhandledRejection', unexpectedHandler);
 
-    process.on('SIGTERM', () =>{
+    process.on('SIGTERM', () => {
         console.log('Sigterm Recieved');
-        if(server){
+        if (server) {
             server.close();
         }
     })

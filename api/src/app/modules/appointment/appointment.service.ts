@@ -1,4 +1,5 @@
-import { Appointments, Patient, Payment, paymentStatus } from "@prisma/client";
+﻿import { paymentStatus } from "../../../shared/enums";
+import type { Appointments, Patient, Payment } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import ApiError from "../../../errors/apiError";
 import httpStatus from "http-status";
@@ -56,8 +57,8 @@ const createAppointment = async (payload: any): Promise<Appointments | null | an
             }
         });
         const { paymentMethod, paymentType } = payment;
-        const docFee = Number(isDoctorExist.price);
-        const vat = (15 / 100) * (docFee + 10)
+        const docFee = Math.round(Number(isDoctorExist.price) || 0);
+        const vat = Math.round((15 / 100) * (docFee + 10))
         if (appointment.id) {
             await tx.payment.create({
                 data: {
@@ -99,7 +100,7 @@ const createAppointment = async (payload: any): Promise<Appointments | null | an
         const replacementObj = appointmentObj;
         const subject = `Appointment Confirm With Dr ${appointment?.doctor?.firstName + ' ' + appointment?.doctor?.lastName} at ${appointment.scheduleDate} + ' ' + ${appointment.scheduleTime}`
         const toMail = `${appointment.email + ',' + appointment.doctor?.email}`;
-        EmailtTransporter({ pathName, replacementObj, toMail, subject })
+        EmailtTransporter({ pathName, replacementObj, toMail, subject }).catch((e) => console.log("Email skipped:", e?.message));
         return appointment;
     });
     return result;
@@ -138,7 +139,7 @@ const createAppointmentByUnAuthenticateUser = async (payload: any): Promise<Appo
             data: patientInfo,
         });
         const { paymentMethod, paymentType } = payment;
-        const vat = (15 / 100) * (60 + 10)
+        const vat = Math.round((15 / 100) * (60 + 10))
         if (appointment.id) {
             await tx.payment.create({
                 data: {
@@ -168,7 +169,7 @@ const createAppointmentByUnAuthenticateUser = async (payload: any): Promise<Appo
         const subject = `Appointment Confirm at ${appointment.scheduleDate} ${appointment.scheduleTime}`
 
         const toMail = `${appointment.email}`;
-        EmailtTransporter({ pathName, replacementObj, toMail, subject })
+        EmailtTransporter({ pathName, replacementObj, toMail, subject }).catch((e) => console.log("Email skipped:", e?.message));
         return appointment;
     })
 

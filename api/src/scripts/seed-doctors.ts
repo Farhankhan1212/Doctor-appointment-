@@ -1,9 +1,11 @@
-// DEMO ONLY: fictional Lucknow-style doctors so the site is not empty.
-// Delete them (admin panel or pgAdmin) before a real launch.
-import prisma from '../shared/prisma';
+﻿// DEMO ONLY: fictional Lucknow-style doctors so the site is not empty.
+// Usage (from the api folder):
+//   node --env-file=.env -r ts-node/register/transpile-only src/scripts/seed-doctors.ts
+import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
-import { UserRole } from '@prisma/client';
-
+import { connectDB } from '../shared/db';
+import { Auth, Doctor } from '../shared/models';
+import { UserRole } from '../shared/enums';
 const areas = ['Hazratganj', 'Gomti Nagar', 'Aliganj', 'Indira Nagar', 'Alambagh', 'Mahanagar', 'Charbagh', 'Aminabad'];
 const doctors = [
   ['Amit', 'Verma', 'Cardiologist', 'MBBS, MD'],
@@ -15,28 +17,26 @@ const doctors = [
   ['Imran', 'Siddiqui', 'ENT', 'MBBS, MS'],
   ['Anjali', 'Singh', 'Dentist', 'BDS, MDS'],
 ];
-
 async function main() {
-  const password = bcrypt.hashSync('Doctor@123', 12);
+  await connectDB();
+  const password = await bcrypt.hash('Doctor@123', 12);
   for (let i = 0; i < doctors.length; i++) {
     const [firstName, lastName, specialization, degree] = doctors[i];
     const email = `${firstName}.${lastName}@demo.com`.toLowerCase();
-    if (await prisma.auth.findUnique({ where: { email } })) continue;
-    const doc = await prisma.doctor.create({
-      data: {
-        firstName, lastName, email, specialization, degree,
-        services: specialization,
-        city: 'Lucknow', state: 'Uttar Pradesh', country: 'India',
-        address: `${areas[i]}, Lucknow`,
-        clinicName: `${lastName} Clinic`, clinicAddress: `${areas[i]}, Lucknow`,
-        price: '500', experience: '10',
-        verified: true, approved: true,
-      },
+    if (await Auth.findOne({ email })) continue;
+    const doc = await Doctor.create({
+      firstName, lastName, email, specialization, degree,
+      services: specialization,
+      city: 'Lucknow', state: 'Uttar Pradesh', country: 'India',
+      address: `${areas[i]}, Lucknow`,
+      clinicName: `${lastName} Clinic`, clinicAddress: `${areas[i]}, Lucknow`,
+      price: '500', experience: '10',
+      verified: true, approved: true,
     });
-    await prisma.auth.create({
-      data: { email, password, role: UserRole.doctor, userId: doc.id },
-    });
+    await Auth.create({ email, password, role: UserRole.doctor, userId: doc._id });
   }
   console.log('Done');
 }
-main().finally(() => prisma.$disconnect());
+main()
+  .catch((e) => { console.error(e); process.exitCode = 1; })
+  .finally(() => mongoose.disconnect());

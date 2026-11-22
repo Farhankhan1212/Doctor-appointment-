@@ -1,6 +1,6 @@
-import prisma from '../shared/prisma';
+﻿import prisma from '../shared/prisma';
 import bcrypt from 'bcrypt';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../shared/enums';
 
 const ADMIN_EMAIL = 'admin@demo.com';
 const ADMIN_PASSWORD = 'Admin@12345';

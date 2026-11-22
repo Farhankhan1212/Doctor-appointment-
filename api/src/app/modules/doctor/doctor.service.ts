@@ -1,5 +1,6 @@
-import { Doctor, UserRole } from "@prisma/client";
-import prisma from "../../../shared/prisma";
+﻿import mongoose from "mongoose";
+import { UserRole } from "../../../shared/enums";
+import { Doctor as DoctorModel, Auth, UserVerfication } from "../../../shared/models";
 import bcrypt from 'bcrypt';
 import ApiError from "../../../errors/apiError";
 import httpStatus from "http-status";
@@ -15,27 +16,36 @@ import * as path from "path";
 import config from "../../../config";
 const { v4: uuidv4 } = require('uuid');
 
+type Doctor = Record<string, any>;
+
+// user input is never trusted as a regex or as a Mongo operator
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const stripOperators = (obj: Record<string, any>) => {
+    for (const k of Object.keys(obj)) {
+        if (k.startsWith('$') || k === 'id' || k === '_id') delete obj[k];
+    }
+    return obj;
+};
+
 const sendVerificationEmail = async (data: Doctor) => {
     const currentUrl = process.env.NODE_ENV === 'production' ? config.backendLiveUrl : config.backendLocalUrl;
     const uniqueString = uuidv4() + data.id;
-    const uniqueStringHashed = await bcrypt.hashSync(uniqueString, 12);
+    const uniqueStringHashed = await bcrypt.hash(uniqueString, 12);
     const url = `${currentUrl}user/verify/${data.id}/${uniqueString}`
     const expiresDate = moment().add(6, 'hours')
-    const verficationData = await prisma.userVerfication.create({
-        data: {
-            userId: data.id,
-            expiresAt: expiresDate.toDate(),
-            uniqueString: uniqueStringHashed
-        }
+    const verficationData = await UserVerfication.create({
+        userId: data._id,
+        expiresAt: expiresDate.toDate(),
+        uniqueString: uniqueStringHashed
     })
     if (verficationData) {
         const pathName = path.join(__dirname, '../../../../template/verify.html',)
-        const obj = {link: url};
+        const obj = { link: url };
         const subject = "Email Verification"
         const toMail = data.email;
-        try{
-            await EmailtTransporter({pathName, replacementObj: obj, toMail, subject})
-        }catch(err){
+        try {
+            await EmailtTransporter({ pathName, replacementObj: obj, toMail, subject })
+        } catch (err) {
             console.log(err);
             throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Unable to send email !');
         }
@@ -43,30 +53,33 @@ const sendVerificationEmail = async (data: Doctor) => {
 }
 
 const create = async (payload: any): Promise<any> => {
-    const data = await prisma.$transaction(async (tx) => {
-        // approved / verified can never be set by the person signing up
-        const { password, approved, verified, ...othersData } = payload;
-        const existEmail = await tx.auth.findUnique({ where: { email: othersData.email } });
-        if (existEmail) {
-            throw new Error("Email Already Exist !!")
-        }
-        const doctor = await tx.doctor.create({ data: othersData });
-        await tx.auth.create({
-            data: {
-                email: doctor.email,
-                password: password && await bcrypt.hashSync(password, 12),
-                role: UserRole.doctor,
-                userId: doctor.id
-            },
-        });
-        return doctor
-    });
-
-    if (data.id) {
-        await sendVerificationEmail(data)
+    // approved / verified can never be set by the person signing up
+    const { password, approved, verified, ...othersData } = payload;
+    if (!password) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Password is required !");
     }
-    return data;
+    const existEmail = await Auth.findOne({ email: othersData.email });
+    if (existEmail) {
+        throw new Error("Email Already Exist !!")
+    }
+    const doctor = await DoctorModel.create(stripOperators(othersData));
+    try {
+        await Auth.create({
+            email: doctor.email,
+            password: await bcrypt.hash(password, 12),
+            role: UserRole.doctor,
+            userId: doctor._id
+        });
+    } catch (error) {
+        // undo the doctor record (replaces the old transaction rollback)
+        await DoctorModel.deleteOne({ _id: doctor._id });
+        throw error;
+    }
 
+    if (doctor.id) {
+        await sendVerificationEmail(doctor)
+    }
+    return doctor;
 }
 
 const getAllDoctors = async (filters: IDoctorFilters, options: IOption, includeUnapproved = false): Promise<IGenericResponse<Doctor[]>> => {
@@ -79,57 +92,50 @@ const getAllDoctors = async (filters: IDoctorFilters, options: IOption, includeU
         andCondition.push({ approved: true });
     }
     if (searchTerm) {
+        const rx = new RegExp(escapeRegex(String(searchTerm)), 'i');
         andCondition.push({
-            OR: DoctorSearchableFields.map((field) => ({
-                [field]: {
-                    contains: searchTerm,
-                    mode: 'insensitive'
-                }
-            }))
+            $or: DoctorSearchableFields.map((field: string) => ({ [field]: rx }))
         })
     }
 
-    if (Object.keys(filterData).length > 0) {
-        andCondition.push({
-            AND: Object.entries(filterData).map(([key, value]) => ({
-                [key]: { equals: value }
-            }))
-        })
+    // exact-match filters, only for real Doctor fields and plain values
+    for (const [key, value] of Object.entries(filterData)) {
+        if (!DoctorModel.schema.path(key)) continue;
+        if (typeof value !== 'string' && typeof value !== 'number' && typeof value !== 'boolean') continue;
+        andCondition.push({ [key]: value });
     }
 
-    if (min || max) {
-        andCondition.push({
-            AND: ({
-                price: {
-                    gte: min,
-                    lte: max
-                }
-            })
-        })
+    // price is stored as text, so compare it as a number
+    const bounds: any[] = [];
+    const priceNum = { $convert: { input: '$price', to: 'double', onError: 0, onNull: 0 } };
+    if (min && !Number.isNaN(Number(min))) bounds.push({ $gte: [priceNum, Number(min)] });
+    if (max && !Number.isNaN(Number(max))) bounds.push({ $lte: [priceNum, Number(max)] });
+    if (bounds.length) {
+        andCondition.push({ $expr: { $and: bounds } });
     }
 
     if (specialist) {
         // match the doctor's speciality (e.g. "Dentist", "Cardiologist") or the services they list
+        const rx = new RegExp(escapeRegex(String(specialist)), 'i');
         andCondition.push({
-            OR: [
-                { specialization: { contains: specialist, mode: 'insensitive' } },
-                { services: { contains: specialist, mode: 'insensitive' } },
-            ]
+            $or: [{ specialization: rx }, { services: rx }]
         })
     }
 
-    const whereCondition = andCondition.length > 0 ? { AND: andCondition } : {};
-    const result = await prisma.doctor.findMany({
-        skip,
-        take: limit,
-        where: whereCondition,
-        // real rating numbers for the doctor cards
-        include: { reviews: { select: { star: true, isRecommended: true } } },
-        // admin list: pending doctors first, then newest
-        orderBy: includeUnapproved ? [{ approved: 'asc' }, { createdAt: 'desc' }] : undefined,
-    });
+    const whereCondition = andCondition.length > 0 ? { $and: andCondition } : {};
 
-    const total = await prisma.doctor.count({ where: whereCondition });
+    const [result, total] = await Promise.all([
+        DoctorModel.find(whereCondition)
+            // admin list: pending doctors first, then newest
+            .sort(includeUnapproved ? { approved: 1, createdAt: -1 } : { createdAt: 1 })
+            .skip(skip)
+            .limit(limit)
+            // real rating numbers for the doctor cards (doctorId is needed to link the reviews)
+            .populate({ path: 'reviews', select: 'star isRecommended doctorId' })
+            .exec(),
+        DoctorModel.countDocuments(whereCondition).exec(),
+    ]);
+
     return {
         meta: {
             page,
@@ -141,28 +147,21 @@ const getAllDoctors = async (filters: IDoctorFilters, options: IOption, includeU
 }
 
 const getDoctor = async (id: string): Promise<Doctor | null> => {
-    const result = await prisma.doctor.findUnique({
-        where: {
-            id: id
-        }
-    });
+    if (!mongoose.isValidObjectId(id)) return null;
+    const result = await DoctorModel.findById(id);
     return result;
 }
 
 const deleteDoctor = async (id: string): Promise<any> => {
-    const result = await prisma.$transaction(async (tx) => {
-        const patient = await tx.doctor.delete({
-            where: {
-                id: id
-            }
-        });
-        await tx.auth.delete({
-            where: {
-                email: patient.email
-            }
-        })
-    });
-    return result;
+    if (!mongoose.isValidObjectId(id)) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor not found !");
+    }
+    const doctor = await DoctorModel.findByIdAndDelete(id);
+    if (!doctor) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor not found !");
+    }
+    await Auth.deleteOne({ email: doctor.email });
+    return doctor;
 }
 
 const updateDoctor = async (req: Request): Promise<Doctor> => {
@@ -172,6 +171,7 @@ const updateDoctor = async (req: Request): Promise<Doctor> => {
     // a doctor must never approve or verify themselves
     delete user.approved;
     delete user.verified;
+    stripOperators(user);
 
     if (file) {
         const uploadImage = await CloudinaryHelper.uploadFile(file);
@@ -181,18 +181,25 @@ const updateDoctor = async (req: Request): Promise<Doctor> => {
             throw new ApiError(httpStatus.EXPECTATION_FAILED, 'Failed to Upload Image');
         }
     }
-    const result = await prisma.doctor.update({
-        where: { id },
-        data: user
-    })
+    if (!mongoose.isValidObjectId(id)) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor not found !");
+    }
+    const result = await DoctorModel.findByIdAndUpdate(id, user, { new: true, runValidators: true });
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor not found !");
+    }
     return result;
 }
 
 const setApproval = async (id: string, approved: boolean): Promise<Doctor> => {
-    return prisma.doctor.update({
-        where: { id },
-        data: { approved }
-    });
+    if (!mongoose.isValidObjectId(id)) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor not found !");
+    }
+    const result = await DoctorModel.findByIdAndUpdate(id, { approved }, { new: true });
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor not found !");
+    }
+    return result;
 }
 
 export const DoctorService = {
