@@ -11,10 +11,11 @@ export const doctorApi = baseApi.injectEndpoints({
                 method: 'GET',
                 params: arg
             }),
-            transformResponse: (response) =>{
+            // axiosBaseQuery already unwraps `data`; the pagination meta arrives as the 2nd argument
+            transformResponse: (response, meta) => {
                 return {
-                    doctors: response.data,
-                    meta: response.meta
+                    doctors: Array.isArray(response) ? response : (response?.data ?? []),
+                    meta: meta?.page !== undefined ? meta : response?.meta
                 }
             },
             providesTags: [tagTypes.doctor]
@@ -25,10 +26,11 @@ export const doctorApi = baseApi.injectEndpoints({
                 method: 'GET',
                 params: arg
             }),
-            transformResponse: (response) => {
+            // axiosBaseQuery already unwraps `data`; the pagination meta arrives as the 2nd argument
+            transformResponse: (response, meta) => {
                 return {
-                    doctors: response.data,
-                    meta: response.meta
+                    doctors: Array.isArray(response) ? response : (response?.data ?? []),
+                    meta: meta?.page !== undefined ? meta : response?.meta
                 }
             },
             providesTags: [tagTypes.doctor]

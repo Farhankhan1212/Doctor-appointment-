@@ -8,5 +8,5 @@
     object-position: top;
 }
 .doc-info a{
-    color: #1977cc !important;
+    color: var(--accent) !important;
 }

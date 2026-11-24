@@ -1,6 +1,6 @@
 .why-us .content {
     padding: 30px;
-    background: #1977cc;
+    background: var(--grad-primary);
     border-radius: 4px;
     color: #fff;
   }
@@ -30,14 +30,14 @@
   }
   
   .why-us .content .more-btn:hover {
-    color: #1977cc;
-    background: #fff;
+    color: var(--accent);
+    background: var(--surface);
   }
   
   .why-us .icon-boxes .icon-box {
     text-align: center;
     border-radius: 10px;
-    background: #fff;
+    background: var(--surface);
     box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.1);
     padding: 40px 30px;
     width: 100%;
@@ -45,7 +45,7 @@
   
   .why-us .icon-boxes .icon-box .icon {
     font-size: 40px;
-    color: #1977cc;
+    color: var(--accent);
     margin-bottom: 30px;
   }
   
@@ -53,7 +53,7 @@
     font-size: 20px;
     font-weight: 700;
     margin: 0 0 30px 0;
-    color: #2c4964;
+    color: var(--text);
   }
   
   .why-us .icon-boxes .icon-box p {

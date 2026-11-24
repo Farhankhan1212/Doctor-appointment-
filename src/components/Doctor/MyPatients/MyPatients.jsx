@@ -19,7 +19,7 @@ const MyPatients = () => {
     if (!isLoading && !isError && data?.length > 0) content =
         <>
             {data && data?.map((item) => (
-                <div className="w-100 mb-3 rounded p-3 text-center" style={{ background: '#f8f9fa' }}>
+                <div className="w-100 mb-3 rounded p-3 text-center" style={{ background: 'var(--surface-2)' }}>
                     <div className="">
                         <Link to={'/'} className="my-3 patient-img">
                             <img src={data?.patient?.img ? data?.patient?.img : img} alt="" />

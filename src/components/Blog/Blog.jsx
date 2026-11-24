@@ -44,7 +44,7 @@ const Blog = () => {
                             <div className="card-body p-0">
                                 <div className="p-2">
                                     <Link to={`/blog/${item?.id}`}>
-                                        <h6 className="text-start mb-1 text-capitalize" style={{ color: '#05335c' }}>{truncate(item?.title, 60)}</h6>
+                                        <h6 className="text-start mb-1 text-capitalize" style={{ color: 'var(--text-strong)' }}>{truncate(item?.title, 60)}</h6>
                                     </Link>
                                     <div className="d-flex text-start gap-2">
                                         <div className="d-flex gap-1 text-muted align-items-center justify-content-center">
@@ -63,7 +63,7 @@ const Blog = () => {
                                 </div>
                                 <div className="mt-1 mb-3 text-start">
                                     <Link to={`/blog/${item?.id}`}>
-                                        <button className="btn btn-link border-0" style={{ color: '#1977cc' }}>Read More</button>
+                                        <button className="btn btn-link border-0" style={{ color: 'var(--primary)' }}>Read More</button>
                                     </Link>
                                 </div>
                             </div>
@@ -80,7 +80,7 @@ const Blog = () => {
             <div className="container-fluid" style={{ marginTop: 150, marginBottom: 100 }}>
                 <div className="row">
                     <div className="col-md-9 col-sm-12">
-                        <div className="p-3 py-5 mx-3 rounded" style={{ backgroundColor: '#f8f9fa' }}>
+                        <div className="p-3 py-5 mx-3 rounded" style={{ backgroundColor: 'var(--surface-2)' }}>
                             <div className="row">
                                 {content}
                             </div>

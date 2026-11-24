@@ -23,7 +23,7 @@ const PersonalInformation = ({ handleChange, selectValue, setPatientId =() =>{} 
     }, [checked, data, setPatientId])
 
     return (
-        <form className="rounded p-3 mt-5" style={{ background: "#f8f9fa" }}>
+        <form className="rounded p-3 mt-5" style={{ background: 'var(--surface-2)' }}>
             <div className="row">
                 <Checkbox checked={checked} onChange={onChange}>
                     Allready Have an Account ?

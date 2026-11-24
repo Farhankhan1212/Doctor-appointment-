@@ -25,7 +25,8 @@ const Schedule = () => {
     const handleEditOk = () => {
         if (editTimeSlot.length > 0) {
             const { toCreate, toUpdate } = editTimeSlot.reduce((acc, cur) => {
-                if (cur.doctorTimeSlotId) {
+                // existing ranges come from the API with their own id; ranges added in the modal start with "new-"
+                if (cur.doctorTimeSlotId || !String(cur.id).startsWith('new-')) {
                     acc.toUpdate.push(cur);
                 } else {
                     acc.toCreate.push({ ...cur, day: key })
@@ -67,7 +68,7 @@ const Schedule = () => {
         if (findObject) {
             const editedObject = editTimeSlot.find(item => item.id === id);
 
-            const updateObject = editedObject.id ? { ...editedObject, endTime: timeString } : { ...findObject, endTime: timeString };
+            const updateObject = editedObject?.id ? { ...editedObject, endTime: timeString } : { ...findObject, endTime: timeString };
             setEditTimeSlot(prev => {
                 const findIndex = prev.findIndex(item => item.id === id);
                 if (findIndex !== -1) {
@@ -125,8 +126,8 @@ const Schedule = () => {
         setTimeSlot(timeSlot.filter((item) => item.id !== id))
     }
     const addField = (e) => {
-        const getLastValue = timeSlot[timeSlot.length - 1];
-        setTimeSlot([...timeSlot, { id: getLastValue.id + 1 }])
+        // ids from the API are strings, so never do arithmetic on them
+        setTimeSlot([...timeSlot, { id: `new-${timeSlot.length + 1}-${Date.now()}` }])
         e.preventDefault();
     }
 
@@ -166,7 +167,7 @@ const Schedule = () => {
     return (
         <>
             <DashboardLayout>
-                <div className="w-100 mb-3 rounded p-3" style={{ background: '#f8f9fa', height:'90vh' }}>
+                <div className="w-100 mb-3 rounded p-3" style={{ background: 'var(--surface-2)', height:'90vh' }}>
                     <h5 className='text-title'>Schedule Timings</h5>
                     <TabForm content={content} data={data} handleOnSelect={handleOnSelect} showEditModal={showEditModal} showModal={showModal} />
                 </div>

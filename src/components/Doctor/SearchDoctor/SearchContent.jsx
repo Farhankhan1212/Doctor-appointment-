@@ -32,7 +32,7 @@ const SearchContent = ({ data }) => {
         : 0;
 
     return (
-        <div className="mb-4 rounded" style={{ background: '#f3f3f3' }}>
+        <div className="mb-4 rounded" style={{ background: 'var(--surface-2)' }}>
             <div className="d-flex p-3 justify-content-between">
                 <div className="d-flex gap-3">
                     <div className="doc-img-fluid d-flex align-items-center">

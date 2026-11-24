@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { MedicineService } from "./medicine.service";
-import { Medicine } from "@prisma/client";
+import { Medicine } from "../../../shared/types";
 
 const updateMedicine = catchAsync(async (req: Request, res: Response) => {
     const result = await MedicineService.updateMedicine(req.body);

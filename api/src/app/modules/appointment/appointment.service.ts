@@ -1,450 +1,375 @@
-﻿import { paymentStatus } from "../../../shared/enums";
-import type { Appointments, Patient, Payment } from "@prisma/client";
-import prisma from "../../../shared/prisma";
-import ApiError from "../../../errors/apiError";
+﻿import mongoose from "mongoose";
 import httpStatus from "http-status";
-import moment from 'moment';
-import { EmailtTransporter } from "../../../helpers/emailTransporter";
-import * as path from 'path';
+import moment from "moment";
+import * as path from "path";
+import ApiError from "../../../errors/apiError";
 import config from "../../../config";
+import { EmailtTransporter } from "../../../helpers/emailTransporter";
+import { paymentStatus } from "../../../shared/enums";
+import {
+    Appointments as AppointmentModel,
+    Doctor as DoctorModel,
+    Patient as PatientModel,
+    Payment as PaymentModel,
+} from "../../../shared/models";
+import { Appointments, Patient } from "../../../shared/types";
+import { TimeSlotService, parseTime } from "../doctorTimeSlot/doctorTimeSlot.service";
 
-const createAppointment = async (payload: any): Promise<Appointments | null | any> => {
+type AnyRecord = Record<string, any>;
 
-    const { patientInfo, payment } = payload;
-    if(patientInfo.patientId){
-        const isUserExist = await prisma.patient.findUnique({
-            where: {
-                id: patientInfo.patientId
-            }
-        })
-        if (!isUserExist) {
-            patientInfo['patientId'] = null
+const isId = (id: any) => typeof id === "string" && mongoose.isValidObjectId(id);
+
+// Only these fields may be written by a patient while booking
+const BOOKING_FIELDS = [
+    "patientId", "doctorId", "firstName", "lastName", "email", "phone", "address",
+    "description", "scheduleDate", "scheduleTime", "reasonForVisit", "patientType",
+];
+const pickBookingFields = (source: AnyRecord = {}) => {
+    const out: AnyRecord = {};
+    for (const key of BOOKING_FIELDS) {
+        if (source[key] !== undefined && source[key] !== null && source[key] !== "") out[key] = source[key];
+    }
+    return out;
+};
+
+// Remove Mongo operators / identity fields from client supplied update bodies
+const sanitiseUpdate = (payload: AnyRecord = {}) => {
+    const out: AnyRecord = { ...payload };
+    for (const key of Object.keys(out)) {
+        if (key.startsWith("$") || key === "id" || key === "_id") delete out[key];
+    }
+    return out;
+};
+
+// <3 letters> + year + month + day-of-year + 3 random digits, e.g. AMI20261133280
+const buildTrackingId = (prefix: string) => {
+    const now = moment();
+    const day = String(now.dayOfYear()).padStart(2, "0");
+    const suffix = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+    return `${prefix}${now.year()}${String(now.month() + 1).padStart(2, "0")}${day}${suffix}`;
+};
+
+// Create the appointment, retrying with a new tracking id on a (rare) collision
+const insertAppointment = async (info: AnyRecord, prefix: string) => {
+    for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+            return await AppointmentModel.create({ ...info, trackingId: buildTrackingId(prefix) });
+        } catch (error: any) {
+            if (error?.code !== 11000) throw error;
         }
     }
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Could not generate a tracking id, please try again");
+};
 
-    const isDoctorExist = await prisma.doctor.findUnique({
-        where: {
-            id: patientInfo.doctorId
-        }
+// The requested date + time must be one of the doctor's currently free slots
+const assertSlotIsFree = async (doctorId: string, scheduleDate: string, scheduleTime: string) => {
+    const date = moment(scheduleDate);
+    if (!scheduleDate || !date.isValid()) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Please select a valid appointment date");
+    }
+    if (date.isBefore(moment().startOf("day"))) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Appointment date can not be in the past");
+    }
+    const time = parseTime(scheduleTime);
+    if (!time.isValid()) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Please select a valid appointment time");
+    }
+
+    const free = await TimeSlotService.getAppointmentTimeOfEachDoctor(doctorId, {
+        day: date.format("dddd").toLowerCase(),
+        date: date.format("YYYY-MM-DD"),
     });
-
-    if (!isDoctorExist) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Doctor Account is not found !!')
+    const wanted = time.format("hh:mm a");
+    if (!free.some((item: any) => item.slot.time === wanted)) {
+        throw new ApiError(
+            httpStatus.CONFLICT,
+            "This time slot is not available any more. Please choose another slot."
+        );
     }
-    patientInfo['paymentStatus'] = paymentStatus.paid;
-  
-    const result = await prisma.$transaction(async (tx) => {
-        const previousAppointment = await tx.appointments.findFirst({
-            orderBy: { createdAt: 'desc' },
-            take: 1
-        });
-        const appointmentLastNumber = (previousAppointment?.trackingId ?? '').slice(-3);
-        const lastDigit = (Number(appointmentLastNumber) + 1 || 0).toString().padStart(3, '0');
+};
 
-        // Trcking Id To be ==> First 3 Letter Of User  + current year + current month + current day + unique number (Matched Previous Appointment).
-        const first3DigitName = patientInfo?.firstName?.slice(0, 3).toUpperCase();
-        const year = moment().year();
-        const month = (moment().month() + 1).toString().padStart(2, '0');
-        const day = (moment().dayOfYear()).toString().padStart(2, '0');
-        const trackingId = first3DigitName + year + month + day + lastDigit || '001';
-        patientInfo['trackingId'] = trackingId;
+const sendAppointmentMail = (template: string, obj: AnyRecord, toMail: string, subject: string) => {
+    const pathName = path.join(__dirname, "../../../../template/" + template);
+    // e-mail problems must never fail a booking that is already saved
+    EmailtTransporter({ pathName, replacementObj: obj, toMail, subject }).catch((e: any) =>
+        console.log("Email skipped:", e?.message)
+    );
+};
 
-        const appointment = await tx.appointments.create({
-            data: patientInfo,
-            include: {
-                doctor: true,
-                patient: true
-            }
+const createAppointment = async (payload: AnyRecord): Promise<Appointments> => {
+    const { patientInfo, payment } = payload || {};
+    if (!patientInfo || !payment) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Appointment and payment details are required");
+    }
+    const info = pickBookingFields(patientInfo);
+
+    if (!isId(info.doctorId)) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor Account is not found !!");
+    }
+    const doctor = await DoctorModel.findById(info.doctorId);
+    if (!doctor) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor Account is not found !!");
+    }
+    if (!info.firstName || !info.lastName || !info.email) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "First name, last name and email are required");
+    }
+
+    // a stale / unknown patient id just means "guest booking"
+    if (info.patientId && !(isId(info.patientId) && (await PatientModel.exists({ _id: info.patientId })))) {
+        delete info.patientId;
+    }
+
+    await assertSlotIsFree(info.doctorId, info.scheduleDate, info.scheduleTime);
+
+    info.paymentStatus = paymentStatus.paid;
+    const appointment = await insertAppointment(info, info.firstName.slice(0, 3).toUpperCase());
+
+    try {
+        const docFee = Math.round(Number(doctor.price) || 0);
+        const vat = Math.round((15 / 100) * (docFee + 10));
+        await PaymentModel.create({
+            appointmentId: appointment._id,
+            bookingFee: 10,
+            paymentMethod: payment.paymentMethod,
+            paymentType: payment.paymentType,
+            vat,
+            DoctorFee: docFee,
+            totalAmount: vat + docFee,
         });
-        const { paymentMethod, paymentType } = payment;
-        const docFee = Math.round(Number(isDoctorExist.price) || 0);
-        const vat = Math.round((15 / 100) * (docFee + 10))
-        if (appointment.id) {
-            await tx.payment.create({
-                data: {
-                    appointmentId: appointment.id,
-                    bookingFee: 10,
-                    paymentMethod: paymentMethod,
-                    paymentType: paymentType,
-                    vat: vat,
-                    DoctorFee: docFee,
-                    totalAmount: (vat + docFee),
-                }
-            })
-        }
-        const pathName = path.join(__dirname, '../../../../template/appointment.html')
-        const appointmentObj = {
-            created: moment(appointment.createdAt).format('LL'),
+    } catch (error) {
+        // no half-saved bookings (replaces the old DB transaction)
+        await AppointmentModel.deleteOne({ _id: appointment._id });
+        throw error;
+    }
+
+    const saved = await AppointmentModel.findById(appointment._id).populate("doctor").populate("patient");
+    const doc: any = saved?.doctor;
+    const pat: any = saved?.patient;
+    const subject = `Appointment Confirm With Dr ${doc?.firstName} ${doc?.lastName} at ${appointment.scheduleDate} ${appointment.scheduleTime}`;
+    sendAppointmentMail(
+        "appointment.html",
+        {
+            created: moment(appointment.createdAt).format("LL"),
             trackingId: appointment.trackingId,
             patientType: appointment.patientType,
             status: appointment.status,
             paymentStatus: appointment.paymentStatus,
             prescriptionStatus: appointment.prescriptionStatus,
-            scheduleDate:moment(appointment.scheduleDate).format('LL'),
-            scheduleTime:appointment.scheduleTime,
-            doctorImg: appointment?.doctor?.img,
-            doctorFirstName: appointment?.doctor?.firstName,
-            doctorLastName: appointment?.doctor?.lastName,
-            specialization:appointment?.doctor?.specialization,
-            designation:appointment?.doctor?.designation,
-            college:appointment?.doctor?.college,
-            patientImg:appointment?.patient?.img,
-            patientfirstName:appointment?.patient?.firstName,
-            patientLastName:appointment?.patient?.lastName,
-            dateOfBirth: moment().diff(moment(appointment?.patient?.dateOfBirth), 'years'),
-            bloodGroup:appointment?.patient?.bloodGroup,
-            city:appointment?.patient?.city,
-            state:appointment?.patient?.state,
-            country:appointment?.patient?.country
-        }
-        const replacementObj = appointmentObj;
-        const subject = `Appointment Confirm With Dr ${appointment?.doctor?.firstName + ' ' + appointment?.doctor?.lastName} at ${appointment.scheduleDate} + ' ' + ${appointment.scheduleTime}`
-        const toMail = `${appointment.email + ',' + appointment.doctor?.email}`;
-        EmailtTransporter({ pathName, replacementObj, toMail, subject }).catch((e) => console.log("Email skipped:", e?.message));
-        return appointment;
-    });
-    return result;
-}
+            scheduleDate: moment(appointment.scheduleDate).format("LL"),
+            scheduleTime: appointment.scheduleTime,
+            doctorImg: doc?.img,
+            doctorFirstName: doc?.firstName,
+            doctorLastName: doc?.lastName,
+            specialization: doc?.specialization,
+            designation: doc?.designation,
+            college: doc?.college,
+            patientImg: pat?.img,
+            patientfirstName: pat?.firstName,
+            patientLastName: pat?.lastName,
+            dateOfBirth: pat?.dateOfBirth ? moment().diff(moment(pat.dateOfBirth), "years") : "",
+            bloodGroup: pat?.bloodGroup,
+            city: pat?.city,
+            state: pat?.state,
+            country: pat?.country,
+        },
+        [appointment.email, doc?.email].filter(Boolean).join(","),
+        subject
+    );
+    return saved as any;
+};
 
-const createAppointmentByUnAuthenticateUser = async (payload: any): Promise<Appointments | null> => {
-    const { patientInfo, payment } = payload;
-    if(patientInfo.patientId){
-        const isUserExist = await prisma.patient.findUnique({
-            where: {
-                id: patientInfo.patientId
-            }
-        })
-        if (!isUserExist) {
-            patientInfo['patientId'] = null
-        }
+const createAppointmentByUnAuthenticateUser = async (payload: AnyRecord): Promise<Appointments | null> => {
+    const { patientInfo, payment } = payload || {};
+    if (!patientInfo || !payment) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Appointment and payment details are required");
+    }
+    const info = pickBookingFields(patientInfo);
+    if (info.patientId && !(isId(info.patientId) && (await PatientModel.exists({ _id: info.patientId })))) {
+        delete info.patientId;
+    }
+    if (config.defaultAdminDoctor && isId(config.defaultAdminDoctor)) {
+        info.doctorId = config.defaultAdminDoctor;
+    } else {
+        delete info.doctorId;
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-        const previousAppointment = await tx.appointments.findFirst({
-            orderBy: { createdAt: 'desc' },
-            take: 1
+    const appointment = await insertAppointment(info, "UNU");
+
+    try {
+        const vat = Math.round((15 / 100) * (60 + 10));
+        await PaymentModel.create({
+            appointmentId: appointment._id,
+            bookingFee: 10,
+            paymentMethod: payment.paymentMethod,
+            paymentType: payment.paymentType,
+            vat,
+            DoctorFee: 60,
+            totalAmount: vat + 60,
         });
+    } catch (error) {
+        await AppointmentModel.deleteOne({ _id: appointment._id });
+        throw error;
+    }
 
-        const appointmentLastNumber = (previousAppointment?.trackingId ?? '').slice(-3);
-        const lastDigit = (Number(appointmentLastNumber) + 1).toString().padStart(3, '0')
-        // Trcking Id To be ==> UNU - 'Un Authenticate User  + current year + current month + current day + unique number (Matched Previous Appointment).
-        const year = moment().year();
-        const month = (moment().month() + 1).toString().padStart(2, '0');
-        const day = (moment().dayOfYear()).toString().padStart(2, '0');
-        const trackingId = 'UNU' + year + month + day + lastDigit || '0001';
-        patientInfo['trackingId'] = trackingId;
-        patientInfo['doctorId'] = config.defaultAdminDoctor
-
-        const appointment = await tx.appointments.create({
-            data: patientInfo,
-        });
-        const { paymentMethod, paymentType } = payment;
-        const vat = Math.round((15 / 100) * (60 + 10))
-        if (appointment.id) {
-            await tx.payment.create({
-                data: {
-                    appointmentId: appointment.id,
-                    bookingFee: 10,
-                    paymentMethod: paymentMethod,
-                    paymentType: paymentType,
-                    vat: vat,
-                    DoctorFee: 60,
-                    totalAmount: (vat + 60),
-                }
-            })
-        }
-
-        const appointmentObj = {
-            created: moment(appointment.createdAt).format('LL'),
-            trackingId: appointment.trackingId,
-            patientType: appointment.patientType,
-            status: appointment.status,
-            paymentStatus: appointment.paymentStatus,
-            prescriptionStatus: appointment.prescriptionStatus,
-            scheduleDate:moment(appointment.scheduleDate).format('LL'),
-            scheduleTime:appointment.scheduleTime,
-        }
-        const pathName = path.join(__dirname, '../../../../template/meeting.html')
-        const replacementObj = appointmentObj;
-        const subject = `Appointment Confirm at ${appointment.scheduleDate} ${appointment.scheduleTime}`
-
-        const toMail = `${appointment.email}`;
-        EmailtTransporter({ pathName, replacementObj, toMail, subject }).catch((e) => console.log("Email skipped:", e?.message));
-        return appointment;
-    })
-
-    return result;
-}
+    if (appointment.email) {
+        sendAppointmentMail(
+            "meeting.html",
+            {
+                created: moment(appointment.createdAt).format("LL"),
+                trackingId: appointment.trackingId,
+                patientType: appointment.patientType,
+                status: appointment.status,
+                paymentStatus: appointment.paymentStatus,
+                prescriptionStatus: appointment.prescriptionStatus,
+                scheduleDate: moment(appointment.scheduleDate).format("LL"),
+                scheduleTime: appointment.scheduleTime,
+            },
+            appointment.email,
+            `Appointment Confirm at ${appointment.scheduleDate} ${appointment.scheduleTime}`
+        );
+    }
+    return appointment as any;
+};
 
 const getAllAppointments = async (): Promise<Appointments[] | null> => {
-    const result = await prisma.appointments.findMany();
-    return result;
-}
+    return AppointmentModel.find().sort({ createdAt: -1 }).populate("doctor").populate("patient") as any;
+};
 
 const getAppointment = async (id: string): Promise<Appointments | null> => {
-    const result = await prisma.appointments.findUnique({
-        where: {
-            id: id
-        },
-        include: {
-            doctor: true,
-            patient: true
-        }
-    });
-    return result;
-}
+    if (!isId(id)) return null;
+    return AppointmentModel.findById(id).populate("doctor").populate("patient") as any;
+};
 
-const getAppointmentByTrackingId = async (data: any): Promise<Appointments | null> => {
-    const { id } = data;
+const getAppointmentByTrackingId = async (data: AnyRecord): Promise<Appointments | null> => {
+    const id = data?.id;
+    if (typeof id !== "string" || !id) return null;
 
-    const result = await prisma.appointments.findUnique({
-        where: {
-            trackingId: id
-        },
-        include: {
-            doctor: {
-                select: {
-                    firstName: true,
-                    lastName: true,
-                    designation: true,
-                    college: true,
-                    degree: true,
-                    img: true
-                },
-            },
-            patient: {
-                select: {
-                    firstName: true,
-                    lastName: true,
-                    address: true,
-                    city: true,
-                    country: true,
-                    state: true,
-                    img: true
-                }
-            }
-        }
-    });
-    return result;
-}
+    return AppointmentModel.findOne({ trackingId: id })
+        .populate({ path: "doctor", select: "firstName lastName designation college degree img" })
+        .populate({ path: "patient", select: "firstName lastName address city country state img" }) as any;
+};
+
+const requirePatient = async (userId: string) => {
+    const patient = isId(userId) ? await PatientModel.findById(userId) : null;
+    if (!patient) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Patient Account is not found !!");
+    }
+    return patient;
+};
+
+const requireDoctor = async (userId: string) => {
+    const doctor = isId(userId) ? await DoctorModel.findById(userId) : null;
+    if (!doctor) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor Account is not found !!");
+    }
+    return doctor;
+};
 
 const getPatientAppointmentById = async (user: any): Promise<Appointments[] | null> => {
-    const { userId } = user;
-    const isPatient = await prisma.patient.findUnique({
-        where: {
-            id: userId
-        }
-    })
-    if (!isPatient) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Patient Account is not found !!')
-    }
-    const result = await prisma.appointments.findMany({
-        where: {
-            patientId: userId
-        },
-        include: {
-            doctor: true
-        }
-    })
-    return result;
-}
+    const patient = await requirePatient(user.userId);
+    return AppointmentModel.find({ patientId: patient._id })
+        .sort({ createdAt: -1 })
+        .populate("doctor") as any;
+};
 
 const getPaymentInfoViaAppintmentId = async (id: string): Promise<any> => {
-    const result = await prisma.payment.findFirst({
-        where: {
-            appointmentId: id
-        },
-        include: {
-            appointment: {
-                include: {
-                    patient: {
-                        select: {
-                            firstName: true,
-                            lastName: true,
-                            address: true,
-                            country: true,
-                            city: true
-                        }
-                    },
-                    doctor: {
-                        select: {
-                            firstName: true,
-                            lastName: true,
-                            address: true,
-                            country: true,
-                            city: true
-                        }
-                    }
-                }
-            }
-        }
+    if (!isId(id)) return null;
+    return PaymentModel.findOne({ appointmentId: id }).populate({
+        path: "appointment",
+        populate: [
+            { path: "patient", select: "firstName lastName address country city" },
+            { path: "doctor", select: "firstName lastName address country city" },
+        ],
     });
-    return result;
-}
+};
 
-const getPatientPaymentInfo = async (user: any): Promise<Payment[]> => {
-    const { userId } = user;
-    const isUserExist = await prisma.patient.findUnique({
-        where: { id: userId }
-    })
-    if (!isUserExist) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Patient Account is not found !!')
-    }
-    const result = await prisma.payment.findMany({
-        where: { appointment: { patientId: isUserExist.id } },
-        include: {
-            appointment: {
-                include: {
-                    doctor: {
-                        select: {
-                            firstName: true,
-                            lastName: true,
-                            designation: true
-                        }
-                    }
-                }
-            }
-        }
+const getPatientPaymentInfo = async (user: any): Promise<any[]> => {
+    const patient = await requirePatient(user.userId);
+    const ids = await AppointmentModel.distinct("_id", { patientId: patient._id });
+    return PaymentModel.find({ appointmentId: { $in: ids } }).populate({
+        path: "appointment",
+        populate: { path: "doctor", select: "firstName lastName designation" },
     });
-    return result;
-}
-const getDoctorInvoices = async (user: any): Promise<Payment[] | null> => {
-    const { userId } = user;
-    const isUserExist = await prisma.doctor.findUnique({
-        where: { id: userId }
-    })
-    if (!isUserExist) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Doctor Account is not found !!')
-    }
-    const result = await prisma.payment.findMany({
-        where: { appointment: { doctorId: isUserExist.id } },
-        include: {
-            appointment: {
-                include: {
-                    patient: {
-                        select: {
-                            firstName: true,
-                            lastName: true
-                        }
-                    }
-                }
-            }
-        }
+};
+
+const getDoctorInvoices = async (user: any): Promise<any[] | null> => {
+    const doctor = await requireDoctor(user.userId);
+    const ids = await AppointmentModel.distinct("_id", { doctorId: doctor._id });
+    return PaymentModel.find({ appointmentId: { $in: ids } }).populate({
+        path: "appointment",
+        populate: { path: "patient", select: "firstName lastName" },
     });
-    return result;
-}
+};
 
 const deleteAppointment = async (id: string): Promise<any> => {
-    const result = await prisma.appointments.delete({
-        where: {
-            id: id
-        }
-    });
+    const result = isId(id) ? await AppointmentModel.findByIdAndDelete(id) : null;
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Appointment is not found !!");
+    }
+    await PaymentModel.deleteMany({ appointmentId: result._id });
     return result;
-}
+};
 
 const updateAppointment = async (id: string, payload: Partial<Appointments>): Promise<Appointments> => {
-    const result = await prisma.appointments.update({
-        data: payload,
-        where: {
-            id: id
-        }
-    })
-    return result;
-}
-
-//doctor Side
-const getDoctorAppointmentsById = async (user: any, filter: any): Promise<Appointments[] | null> => {
-    const { userId } = user;
-    const isDoctor = await prisma.doctor.findUnique({
-        where: {
-            id: userId
-        }
-    })
-    if (!isDoctor) { throw new ApiError(httpStatus.NOT_FOUND, 'Doctor Account is not found !!') }
-
-    let andCondition: any = { doctorId: userId };
-
-    if (filter.sortBy == 'today') {
-        const today = moment().startOf('day').format('YYYY-MM-DD HH:mm:ss');
-        const tomorrow = moment(today).add(1, 'days').format('YYYY-MM-DD HH:mm:ss');
-
-        andCondition.scheduleDate = {
-            gte: today,
-            lt: tomorrow
-        }
+    const result = isId(id)
+        ? await AppointmentModel.findByIdAndUpdate(id, sanitiseUpdate(payload), { new: true, runValidators: true })
+        : null;
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Appointment is not found !!");
     }
-    if (filter.sortBy == 'upcoming') {
-        const upcomingDate = moment().startOf('day').add(1, 'days').format('YYYY-MM-DD HH:mm:ss')
-        andCondition.scheduleDate = {
-            gte: upcomingDate
-        }
-    }
-    const whereConditions = andCondition ? andCondition : {}
+    return result as any;
+};
 
-    const result = await prisma.appointments.findMany({
-        where: whereConditions,
-        include: {
-            patient: true,
-            prescription: {
-                select: {
-                    id: true
-                }
-            }
-        }
-    });
-    return result;
-}
+// doctor side
+const getDoctorAppointmentsById = async (user: any, filter: AnyRecord): Promise<Appointments[] | null> => {
+    const doctor = await requireDoctor(user.userId);
+
+    const where: AnyRecord = { doctorId: doctor._id };
+
+    // scheduleDate is stored as "YYYY-MM-DD HH:mm:ss", so string comparison is date comparison
+    if (filter.sortBy == "today") {
+        const today = moment().startOf("day");
+        where.scheduleDate = {
+            $gte: today.format("YYYY-MM-DD HH:mm:ss"),
+            $lt: today.clone().add(1, "days").format("YYYY-MM-DD HH:mm:ss"),
+        };
+    }
+    if (filter.sortBy == "upcoming") {
+        where.scheduleDate = {
+            $gte: moment().startOf("day").add(1, "days").format("YYYY-MM-DD HH:mm:ss"),
+        };
+    }
+
+    return AppointmentModel.find(where)
+        .sort({ createdAt: -1 })
+        .populate("patient")
+        .populate({ path: "prescription", select: "_id" }) as any;
+};
 
 const getDoctorPatients = async (user: any): Promise<Patient[]> => {
-    const { userId } = user;
-    const isDoctor = await prisma.doctor.findUnique({
-        where: {
-            id: userId
-        }
-    })
-    if (!isDoctor) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Doctor Account is not found !!')
-    }
-
-    const patients = await prisma.appointments.findMany({
-        where: {
-            doctorId: userId
-        },
-        distinct: ['patientId']
+    const doctor = await requireDoctor(user.userId);
+    const patientIds = await AppointmentModel.distinct("patientId", {
+        doctorId: doctor._id,
+        patientId: { $ne: null },
     });
+    return PatientModel.find({ _id: { $in: patientIds } }) as any;
+};
 
-    //extract patients from the appointments table
-    const patientIds = patients.map(appointment => appointment.patientId);
-    const patientList = await prisma.patient.findMany({
-        where: {
-            id: {
-                // @ts-ignore
-                in: patientIds
-            }
-        }
-    })
-    return patientList;
-}
-
-const updateAppointmentByDoctor = async (user: any, payload: Partial<Appointments>): Promise<Appointments | null> => {
-    const { userId } = user;
-    const isDoctor = await prisma.doctor.findUnique({
-        where: {
-            id: userId
-        }
-    })
-    if (!isDoctor) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Doctor Account is not found !!')
+const updateAppointmentByDoctor = async (user: any, payload: AnyRecord): Promise<Appointments | null> => {
+    const doctor = await requireDoctor(user.userId);
+    const id = payload?.id || payload?._id;
+    const result = isId(id)
+        ? await AppointmentModel.findOneAndUpdate(
+              { _id: id, doctorId: doctor._id },
+              sanitiseUpdate(payload),
+              { new: true, runValidators: true }
+          )
+        : null;
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Appointment is not found !!");
     }
-    const result = await prisma.appointments.update({
-        where: {
-            id: payload.id
-        },
-        data: payload
-    })
-    return result;
-}
+    return result as any;
+};
 
 export const AppointmentService = {
     createAppointment,
@@ -460,5 +385,6 @@ export const AppointmentService = {
     getPatientPaymentInfo,
     getDoctorInvoices,
     createAppointmentByUnAuthenticateUser,
-    getAppointmentByTrackingId
-}
+    getAppointmentByTrackingId,
+};
+

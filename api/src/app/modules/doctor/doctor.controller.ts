@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
-import { Doctor } from "@prisma/client";
+import { Doctor } from "../../../shared/types";
 import { DoctorService } from "./doctor.service";
 import pick from "../../../shared/pick";
 import { IDoctorFiltersData, IDoctorOptions } from "./doctor.interface";

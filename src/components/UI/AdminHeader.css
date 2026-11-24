@@ -1,6 +1,6 @@
 .header {
-	background: #fff;
-	border-bottom: 1px solid #f0f0f0;
+	background: var(--surface);
+	border-bottom: 1px solid var(--border);
 	left: 0;
 	position: fixed;
 	right: 0;
@@ -67,7 +67,7 @@
     z-index: 99;
 }
 .user-menu.nav > li > a {
-	color: #333;
+	color: var(--text);
 	font-size: 14px;
 	line-height: 58px;
 	padding: 0 15px;
@@ -79,7 +79,7 @@
 }
 .user-menu.nav > li > a:hover i,
 .user-menu.nav > li > a:focus i {
-	color: #333;
+	color: var(--text);
 }
 .user-img {
 	display: inline-block;
@@ -103,7 +103,7 @@
 .user-menu .dropdown-menu .dropdown-item {
     display: flex;
     align-items: center;
-    border-top: 1px solid #e3e3e3;
+    border-top: 1px solid var(--border);
     padding: 10px 15px;
 }
 .user-menu .dropdown-menu .dropdown-item:hover {
@@ -156,7 +156,7 @@
 .app-dropdown-menu .app-item {
     border: 1px solid transparent;
     border-radius: 3px;
-    color: #737373;
+    color: var(--text-dim);
     display: block;
     padding: 10px 0;
     text-align: center;
@@ -175,8 +175,8 @@
 .app-dropdown-menu .app-item:focus,
 .app-dropdown-menu .app-item:active, 
 .app-dropdown-menu .app-item.active {
-	background-color: #f9f9f9;
-	border-color: #e3e3e3;
+	background-color: var(--surface-2);
+	border-color: var(--border);
 }
 .app-list > div + div {
 	margin-top: 5px;
@@ -190,7 +190,7 @@
 	padding-right: 5px;
 }
 .user-header {
-    background-color: #f9f9f9;
+    background-color: var(--surface-2);
     display: flex;
     padding: 10px 15px;
 }
@@ -236,14 +236,14 @@ html.menu-opened body {
   
     border-color: rgba(0, 0, 0, 0.1);
     border-radius: 50px;
-    color: #333;
+    color: var(--text);
     height: 40px;
     padding: 10px 50px 10px 15px;
 }
 .top-nav-search .btn {
     background-color: transparent;
     border-color: transparent;
-    color: #333;
+    color: var(--text);
     min-height: 40px;
     padding: 7px 15px;
     position: absolute;
@@ -251,19 +251,19 @@ html.menu-opened body {
     top: 0;
 }
 .top-nav-search .form-control::-webkit-input-placeholder {
-	color: #333;
+	color: var(--text);
 }
 .top-nav-search .form-control::-moz-placeholder {
-	color: #333;
+	color: var(--text);
 }
 .top-nav-search .form-control:-ms-input-placeholder {
-	color: #333;
+	color: var(--text);
 }
 .top-nav-search .form-control::-ms-input-placeholder {
-	color: #333;
+	color: var(--text);
 }
 .top-nav-search .form-control::placeholder {
-	color: #333;
+	color: var(--text);
 }
 .top-nav-search.active form {
     display: block;

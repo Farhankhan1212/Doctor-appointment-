@@ -45,7 +45,7 @@ const Appointments = () => {
         <>
             {
                 data && data.map((item) => (
-                    <div className="w-100 mb-3 rounded p-3" style={{ background: '#f8f9fa' }} key={item.id}>
+                    <div className="w-100 mb-3 rounded p-3" style={{ background: 'var(--surface-2)' }} key={item.id}>
                         <div className="d-flex justify-content-between align-items-center">
                             <div className="d-flex align-items-center gap-3">
                                 <Link to={`/`} className="patient-img">

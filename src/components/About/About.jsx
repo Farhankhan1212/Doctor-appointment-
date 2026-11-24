@@ -28,7 +28,7 @@ const About = () => {
                     <div className="card shadow border-0 mb-5 mb-lg-0">
                         {item.img && <img src={item.img} class="img-fluid w-100" alt="" />}
                         <div className="p-2">
-                            <h4 className="mt-4 mb-0" style={{ color: '#223a66' }}><a>{item?.firstName + ' ' + item?.lastName}</a></h4>
+                            <h4 className="mt-4 mb-0" style={{ color: 'var(--text-strong)' }}><a>{item?.firstName + ' ' + item?.lastName}</a></h4>
                             <p>{item?.designation}</p>
                         </div>
                     </div>
@@ -49,7 +49,7 @@ const About = () => {
 
                             <div className='p-2'>
                                 <Link to={`/blog/${item?.id}`}>
-                                    <h6 className="text-start mb-1 text-capitalize" style={{ color: '#223a66' }}>{truncate(item?.title, 40)}</h6>
+                                    <h6 className="text-start mb-1 text-capitalize" style={{ color: 'var(--text-strong)' }}>{truncate(item?.title, 40)}</h6>
                                 </Link>
                                 <div className="px-2">
                                     <p className="form-text text-start text-capitalize">{truncate(item?.description, 80)}</p>
@@ -140,7 +140,7 @@ const About = () => {
                 <div className="row align-items-center">
                     <div className="col-lg-6 offset-lg-6">
                         <div className="my-2">
-                            <h4 style={{ color: '#223a66' }} className='my-0'>Amazing service!</h4>
+                            <h4 style={{ color: 'var(--text-strong)' }} className='my-0'>Amazing service!</h4>
                             <span></span>
                         </div>
                         <p className='form-text'>

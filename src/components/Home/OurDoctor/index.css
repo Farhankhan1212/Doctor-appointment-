@@ -1,5 +1,5 @@
 .doctors {
-    background: #fff;
+    background: var(--surface);
 }
 
 .doctors .member {
@@ -33,7 +33,7 @@
     font-weight: 700;
     margin-bottom: 5px;
     font-size: 20px;
-    color: #2c4964;
+    color: var(--text);
 }
 
 .doctors .member span {
@@ -85,7 +85,7 @@
 }
 
 .doctors .member .social a:hover {
-    background: #1977cc;
+    background: var(--grad-primary);
 }
 
 .doctors .member .social a+a {

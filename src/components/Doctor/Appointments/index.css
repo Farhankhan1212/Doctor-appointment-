@@ -1,5 +1,5 @@
 .patients-info>h5 {
-    color: #2c4964;
+    color: var(--text);
     font-weight: 500;
     cursor: pointer;
     transition: 0.6s ease-in;
@@ -11,7 +11,7 @@
 }
 
 .patients-info .info {
-    color: #757575;
+    color: var(--text-dim);
 }
 
 .patients-info .info p {
@@ -31,7 +31,7 @@
     border-radius: 50%;
     object-fit: cover;
     object-position: top;
-    border: 8px solid #efefef;
+    border: 8px solid var(--border);
     transition: 0.6s ease-in;
 }
 
@@ -41,7 +41,7 @@
 .appointment-status > p{
     font-size: 14px;
     font-weight: 600;
-    color: #757575;
+    color: var(--text-dim);
     margin-bottom: 3px;
     display: flex;
     justify-content: space-between;

@@ -1,0 +1,435 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ==========================================================================
+   NEO-HEALTH  ·  futuristic dark theme
+   Imported last (see index.js) so it sits on top of Bootstrap and the
+   per-component stylesheets. Every colour used by those stylesheets now points
+   at the tokens below, so the whole look can be re-tuned from this block.
+   ========================================================================== */
+:root {
+    --bg-0: #050816;
+    --bg-1: #0a1022;
+    --bg-2: #0f1830;
+
+    --surface: rgba(15, 23, 52, 0.66);      /* cards / panels */
+    --surface-2: rgba(255, 255, 255, 0.045); /* soft inset panels */
+    --surface-3: rgba(255, 255, 255, 0.11);  /* chips, tags */
+    --surface-solid: #0f1734;                /* popovers that must be opaque */
+    --border: rgba(125, 140, 255, 0.22);
+
+    --text: #e8ecff;
+    --text-strong: #ffffff;
+    --text-dim: #a3aed6;
+
+    --primary: #5b5bf0;
+    --accent: #22d3ee;
+    --accent-2: #a78bfa;
+    --pink: #f472b6;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --danger: #fb7185;
+
+    --grad-primary: linear-gradient(135deg, #4f46e5 0%, #0e7490 100%);
+    --grad-text: linear-gradient(90deg, #67e8f9 0%, #a78bfa 55%, #f0abfc 100%);
+    --glow: 0 0 0 1px rgba(34, 211, 238, 0.28), 0 10px 34px -10px rgba(34, 211, 238, 0.45);
+    --shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.75);
+    --radius: 16px;
+
+    color-scheme: dark;
+}
+
+/* ---------- canvas: aurora + faint grid ---------- */
+html { background: var(--bg-0); }
+
+body {
+    font-family: 'Inter', 'Poppins', system-ui, sans-serif !important;
+    color: var(--text) !important;
+    background: transparent !important;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background:
+        radial-gradient(55vw 50vh at 10% 6%, rgba(99, 102, 241, 0.34), transparent 62%),
+        radial-gradient(50vw 45vh at 92% 10%, rgba(34, 211, 238, 0.20), transparent 62%),
+        radial-gradient(55vw 55vh at 72% 100%, rgba(168, 85, 247, 0.24), transparent 62%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1) 60%, var(--bg-0));
+    background-size: 140% 140%, 140% 140%, 140% 140%, 100% 100%;
+    animation: aurora-drift 26s ease-in-out infinite alternate;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(148, 163, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 255, 0.055) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 25%, #000 15%, transparent 78%);
+    mask-image: radial-gradient(ellipse at 50% 25%, #000 15%, transparent 78%);
+}
+
+@keyframes aurora-drift {
+    0%   { background-position: 0% 0%, 100% 0%, 60% 100%, 0 0; }
+    100% { background-position: 18% 12%, 82% 14%, 40% 84%, 0 0; }
+}
+
+::selection { background: rgba(34, 211, 238, 0.35); color: #fff; }
+
+* { scrollbar-width: thin; scrollbar-color: rgba(125, 140, 255, 0.4) transparent; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: rgba(125, 140, 255, 0.35); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- typography ---------- */
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    color: var(--text-strong);
+    letter-spacing: -0.01em;
+}
+
+p, li, td, th, label, small, span { color: inherit; }
+.form-text { color: var(--text-dim) !important; }
+
+a { color: var(--accent); }
+a:hover { color: #a5f3fc; }
+
+hr { border-color: var(--border); opacity: 1; }
+
+.text-title,
+.section-title h2 {
+    color: var(--text-strong) !important;
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 0.04em;
+}
+
+.section-title h2::before { background: var(--border); }
+.section-title h2::after {
+    background: var(--grad-text);
+    height: 3px;
+    border-radius: 3px;
+    box-shadow: 0 0 14px rgba(34, 211, 238, 0.7);
+}
+
+.section-title p { color: var(--text-dim); }
+
+/* ---------- bootstrap utility remaps ---------- */
+.bg-white, .bg-light { background: var(--surface) !important; }
+.bg-gray-g { background: var(--surface-2) !important; }
+.text-secondary, .text-muted { color: var(--text-dim) !important; }
+.text-dark, .text-black { color: var(--text) !important; }
+.border, .border-top, .border-end, .border-bottom, .border-start { border-color: var(--border) !important; }
+.shadow, .shadow-sm, .shadow-lg { box-shadow: var(--shadow) !important; }
+
+.card, .list-group-item, .accordion-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+}
+.card-header, .card-footer { background: var(--surface-2); border-color: var(--border); }
+
+.table {
+    --bs-table-color: var(--text);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--border);
+    --bs-table-striped-bg: rgba(255, 255, 255, 0.03);
+    --bs-table-striped-color: var(--text);
+    --bs-table-hover-bg: rgba(34, 211, 238, 0.07);
+    --bs-table-hover-color: var(--text-strong);
+    color: var(--text);
+}
+
+.form-control, .form-select, textarea.form-control {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text) !important;
+    border-radius: 12px;
+}
+.form-control::placeholder { color: rgba(163, 174, 214, 0.65); }
+.form-control:focus, .form-select:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18) !important;
+    background-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+.dropdown-menu, .popover, .modal-content, .toast, .offcanvas {
+    background: var(--surface-solid);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+.dropdown-item { color: var(--text); }
+.dropdown-item:hover, .dropdown-item:focus { background: rgba(34, 211, 238, 0.12); color: #fff; }
+.modal-header, .modal-footer { border-color: var(--border); }
+.btn-close { filter: invert(1) grayscale(1) brightness(1.6); }
+
+.badge.bg-primary, .bg-primary { background: var(--grad-primary) !important; }
+
+/* ---------- buttons ---------- */
+.btn-primary,
+.btn-get-started,
+.appointment-btn,
+.more-btn:hover,
+.change-photo-btn {
+    background: var(--grad-primary) !important;
+    border: 1px solid rgba(34, 211, 238, 0.45) !important;
+    color: #fff !important;
+    box-shadow: var(--glow);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease !important;
+}
+.btn-primary:hover,
+.btn-get-started:hover,
+.appointment-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.12);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.6), 0 14px 40px -8px rgba(34, 211, 238, 0.6);
+}
+
+.more-btn {
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
+}
+
+.btn-outline-primary { color: var(--accent); border-color: var(--accent); }
+.btn-outline-primary:hover { background: var(--grad-primary); border-color: transparent; color: #fff; }
+
+/* ---------- top bar + header ---------- */
+#topbar {
+    background: rgba(5, 8, 22, 0.72) !important;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+}
+
+#header {
+    background: rgba(8, 12, 32, 0.72) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(16px) saturate(1.4);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 40px -18px rgba(34, 211, 238, 0.35) !important;
+}
+#header .logo img {      /* logo PNG has a white plate: make it a tidy glowing tile instead of a big square */
+    max-height: 64px !important;
+    width: auto;
+    padding: 4px !important;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.35), 0 0 24px -4px rgba(34, 211, 238, 0.5);
+}
+
+.navbar a, .navbar a:focus { color: var(--text-dim) !important; font-weight: 500; transition: color 0.2s; }
+.navbar a:hover, .navbar .active, .navbar .active:focus, .navbar li:hover > a {
+    color: var(--accent) !important;
+    background: transparent !important;
+    text-shadow: 0 0 18px rgba(34, 211, 238, 0.55);
+}
+.navbar .dropdown ul, .navbar .dropdown .dropdown ul {
+    background: var(--surface-solid) !important;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow) !important;
+}
+
+/* ---------- hero ---------- */
+#hero {
+    position: relative;
+    background: none !important;
+    overflow: hidden;
+    isolation: isolate;
+}
+#hero::before {      /* the stock photo is nearly white, so tint it into the palette */
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background: url('./images/img/doctors-bg.jpg') top center / cover no-repeat;
+    filter: grayscale(0.2) contrast(1.05) brightness(0.9);
+}
+#hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+        radial-gradient(60% 80% at 80% 40%, rgba(34, 211, 238, 0.25), transparent 70%),
+        linear-gradient(100deg, rgba(5, 8, 22, 0.98) 0%, rgba(10, 16, 40, 0.92) 42%, rgba(15, 24, 60, 0.55) 100%);
+    mix-blend-mode: multiply;
+}
+#hero h1 {
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent !important;
+    filter: drop-shadow(0 0 24px rgba(99, 102, 241, 0.45));
+}
+#hero h2 { color: var(--text-dim) !important; }
+
+/* ---------- footer ---------- */
+.footer {
+    background: linear-gradient(180deg, rgba(5, 8, 22, 0.2), rgba(5, 8, 22, 0.95)) !important;
+    border-top: 1px solid var(--border);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+.footer-title { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.footer .footer-menu ul li a:hover, .footer .social-icon ul li a:hover { color: var(--accent) !important; }
+.footer .social-icon ul li a { border: 1px solid var(--border); background: var(--surface-2); }
+
+/* ---------- glass panels (cards that the component CSS tinted via tokens) ---------- */
+.date-card, .booking-doc-img, .profile-sidebar, .doc-info, .select-date,
+.widget, .business-widget, .dashboard-card, .invoice-container, .stat-card,
+.custom-blog-card, .blog-card, .doctor-card, .service-card, .feature-card {
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-radius: var(--radius);
+}
+
+.select-date { border: 1px solid var(--border); transition: all 0.25s ease; cursor: pointer; }
+.select-date:hover { border-color: var(--accent); box-shadow: var(--glow); transform: translateY(-2px); }
+.select-date.active { background: var(--grad-primary) !important; border-color: var(--accent); box-shadow: var(--glow); color: #fff; }
+.select-date.active * { color: #fff !important; }
+
+.custom-blog-card, .doctor-card, .service-card {
+    transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.custom-blog-card:hover, .doctor-card:hover, .service-card:hover {
+    border-color: rgba(34, 211, 238, 0.5);
+    box-shadow: var(--glow);
+}
+
+/* ---------- patient / doctor dashboard ---------- */
+.profile-sidebar { border: 1px solid var(--border); box-shadow: var(--shadow); }
+.dashboard-menu > ul > li > a:hover { color: var(--accent) !important; }
+.active, .dashboard-menu > ul > li.active > a {
+    color: var(--accent) !important;
+    background: rgba(34, 211, 238, 0.10) !important;
+    border-radius: 10px;
+}
+.profile-info img, .profileImage img { border-color: var(--accent) !important; box-shadow: 0 0 18px rgba(34, 211, 238, 0.5); }
+
+/* ---------- admin shell ---------- */
+.header {
+    background: rgba(8, 12, 32, 0.78) !important;
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+}
+.sidebar {
+    background: linear-gradient(180deg, rgba(10, 16, 40, 0.95), rgba(5, 8, 22, 0.95)) !important;
+    border-right: 1px solid var(--border);
+}
+.sidebar-menu li a { color: var(--text-dim) !important; }
+.sidebar-menu li a:hover { color: var(--accent) !important; }
+.sidebar-menu > ul > li > a:hover,
+.sidebar-menu li.active a,
+.sidebar-menu > ul > li.active > a:hover {
+    background: linear-gradient(90deg, rgba(79, 70, 229, 0.45), rgba(14, 116, 144, 0.35)) !important;
+    color: #fff !important;
+    box-shadow: inset 2px 0 0 var(--accent);
+}
+.page-wrapper { background: transparent !important; }
+
+/* ---------- sign in / sign up ---------- */
+.signin-signup-container, .signin-signup-container * { text-shadow: none; }
+.signin-signup-container input {
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: var(--text) !important;
+}
+.signin-signup-container .input-field, .signin-signup-container .input-field i { color: var(--text-dim) !important; }
+
+/* ---------- ant design touches (tokens are set in ConfigProvider, this is the polish) ---------- */
+html body .ant-btn-primary:not(:disabled):not(.ant-btn-disabled) {
+    background: var(--grad-primary);
+    border: 1px solid rgba(34, 211, 238, 0.45);
+    box-shadow: var(--glow);
+}
+html body .ant-btn-primary:not(:disabled):not(.ant-btn-disabled):hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+html body .ant-btn-default:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
+html body .ant-btn-primary:disabled { opacity: 0.45; }
+
+html body .ant-card, html body .ant-collapse, html body .ant-list {
+    background: var(--surface);
+    border-color: var(--border);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+}
+html body .ant-table { background: transparent; color: var(--text); }
+html body .ant-table-thead > tr > th { background: rgba(125, 140, 255, 0.10) !important; color: var(--text-strong); border-bottom: 1px solid var(--border); }
+html body .ant-table-tbody > tr > td { border-bottom: 1px solid var(--border); }
+html body .ant-table-tbody > tr.ant-table-row:hover > td { background: rgba(34, 211, 238, 0.07) !important; }
+html body .ant-pagination .ant-pagination-item-active { background: var(--grad-primary); border-color: var(--accent); }
+html body .ant-pagination .ant-pagination-item-active a { color: #fff; }
+
+html body .ant-steps .ant-steps-item-process .ant-steps-item-icon { background: var(--grad-primary); border-color: var(--accent); box-shadow: 0 0 16px rgba(34, 211, 238, 0.55); }
+html body .ant-steps .ant-steps-item-finish .ant-steps-item-icon { border-color: var(--accent); }
+html body .ant-steps .ant-steps-item-title { color: var(--text) !important; }
+
+html body .ant-picker, html body .ant-input, html body .ant-input-affix-wrapper, html body .ant-select-selector {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: var(--border) !important;
+}
+html body .ant-picker-focused, html body .ant-input:focus, html body .ant-input-affix-wrapper-focused {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.18) !important;
+}
+html body .ant-picker-dropdown .ant-picker-panel-container,
+html body .ant-select-dropdown,
+html body .ant-dropdown-menu,
+html body .ant-popover-inner,
+html body .ant-modal-content {
+    background: var(--surface-solid);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+}
+html body .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner { background: var(--grad-primary); box-shadow: 0 0 14px rgba(34, 211, 238, 0.6); }
+html body .ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before { border-color: var(--accent); }
+html body .ant-empty-description { color: var(--text-dim); }
+html body .ant-tag { border-color: var(--border); }
+html body .ant-tabs-ink-bar { background: var(--grad-text); }
+
+/* Booking: inline calendar sits inside the page, so make the popup panel blend in */
+.date-card .ant-picker-dropdown, .col-md-5 .ant-picker-dropdown { position: static; }
+
+/* ---------- motion preferences ---------- */
+@media (prefers-reduced-motion: reduce) {
+    body::before { animation: none; }
+    * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
+
+@media (max-width: 767px) {
+    body::after { background-size: 40px 40px; }
+}
+
+/* bootstrap toast (demo-credential box on the login page) */
+.toast-header { background: var(--surface-3); color: var(--text-strong); border-color: var(--border); }
+.toast-header .btn-close { filter: invert(1); }
+
+/* hero overlaps the info cards below it; keep those cards above the hero's stacking context */
+#hero ~ * { position: relative; z-index: 1; }
+
+/* footer logo: same tidy tile as the header */
+.footer .footer-logo img {
+    max-width: 120px !important;
+    padding: 6px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.35), 0 0 24px -4px rgba(34, 211, 238, 0.5);
+}
+
+.more-btn { color: #e8ecff !important; }

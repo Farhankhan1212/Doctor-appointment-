@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
-import { Reviews } from "@prisma/client";
+import { Reviews } from "../../../shared/types";
 import { ReviewService } from "./reviews.service";
 import pick from "../../../shared/pick";
 

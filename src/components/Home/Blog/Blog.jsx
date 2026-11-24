@@ -63,7 +63,7 @@ const Blog = () => {
                 <p className='m-0'></p>
             </div>
             <div className="container">
-                <div className="row py-5 align-items-center justify-content-center rounded" style={{ background: '#f8f9fa' }}>
+                <div className="row py-5 align-items-center justify-content-center rounded" style={{ background: 'var(--surface-2)' }}>
                     {content}
                     <div className='text-center mt-5'>
                         <Link to={'/blog'} className='more-btn'>See More</Link>

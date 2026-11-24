@@ -64,7 +64,7 @@ const PatientFavouriteDoctor = () => {
                         className="col-md-4 col-sm-12 mb-4 mx-2 rounded shadow-sm"
                         key={item?.id}
                         style={{
-                            background: '#f8f9fa',
+                            background: 'var(--surface-2)',
                             maxWidth: '20rem'
                         }}
                     >
@@ -86,7 +86,7 @@ const PatientFavouriteDoctor = () => {
                             <div className="p-2">
                                 <h5
                                     className="d-flex align-items-center gap-2 mb-0"
-                                    style={{ color: '#1977cc' }}
+                                    style={{ color: 'var(--primary)' }}
                                 >
                                     <Link
                                         to={`/doctors/profile/${item?.doctor?.id}`}
@@ -137,8 +137,8 @@ const PatientFavouriteDoctor = () => {
                                         to={`/doctors/profile/${item?.doctor?.id}`}
                                         className="btn btn-outline-info"
                                         style={{
-                                            borderColor: '#1977cc',
-                                            color: '#1977cc'
+                                            borderColor: 'var(--primary)',
+                                            color: 'var(--primary)'
                                         }}
                                     >
                                         Profile
@@ -147,7 +147,7 @@ const PatientFavouriteDoctor = () => {
                                     <Link
                                         to={`/booking/${item?.doctor?.id}`}
                                         className="btn book-btn"
-                                        style={{ backgroundColor: '#1977cc' }}
+                                        style={{ backgroundColor: 'var(--primary)' }}
                                     >
                                         Book Now
                                     </Link>

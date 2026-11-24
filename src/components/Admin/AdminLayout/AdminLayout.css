@@ -3,7 +3,7 @@
 }
 
 .page-title {
-    color: #333;
+    color: var(--text);
     margin-bottom: 5px;
 }
 .main-wrapper {
@@ -24,6 +24,6 @@
 	margin-bottom: 1.875rem;
 }
 .page-title {
-    color: #333;
+    color: var(--text);
     margin-bottom: 5px;
 }

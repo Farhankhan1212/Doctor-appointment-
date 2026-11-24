@@ -1,11 +1,11 @@
 .section-doctor {
-	background-color: #f8f9fa;
+	background-color: var(--surface-2);
 	padding: 80px 0;
     margin-bottom: 7rem;
 }
 .profile-widget {
-    background-color: #fff;
-    border: 1px solid #f0f0f0;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
     border-radius:4px;
     margin-bottom:30px;
     position:relative;
@@ -54,20 +54,20 @@
 }
 .profile-widget p.speciality {
     font-size: 13px;
-    color: #757575;
+    color: var(--text-dim);
     margin-bottom: 5px;
     min-height: 40px;
 }
 .view-profile-btn{
-    border-color: #1977cc !important;
-    color: #1977cc !important;
+    border-color: var(--accent) !important;
+    color: var(--accent) !important;
 }
 .view-profile-btn:hover{
     color: #fff !important;
-    background-color: #1977cc !important;
+    background-color: var(--primary) !important;
 }
 .book-btn{
-    background-color: #1977cc !important;
+    background-color: var(--primary) !important;
     border: none;
     color: #fff !important;    
 }
@@ -77,7 +77,7 @@
 }
 .available-info {
     font-size: 13px;
-    color: #757575;
+    color: var(--text-dim);
     font-weight: 400;
     list-style: none;
     padding: 0;

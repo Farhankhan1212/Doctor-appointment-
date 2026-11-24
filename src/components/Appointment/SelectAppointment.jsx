@@ -17,7 +17,7 @@ const SelectApppointment = ({ selectedDate, handleDateChange, selectTime, setSel
     return (
         <div style={{ marginTop: '5rem' }}>
 
-            <dir className="p-3" style={{ background: '#f8f9fa' }}>
+            <dir className="p-3" style={{ background: 'var(--surface-2)' }}>
                 <div className="row">
                     <div className="col-md-3 col-sm-12 mt-3 info-part border-end">
                         <p className='py-2 border-bottom info-head-date'>Would you like to schedule an Intervewi? Pick a Date & Time</p>

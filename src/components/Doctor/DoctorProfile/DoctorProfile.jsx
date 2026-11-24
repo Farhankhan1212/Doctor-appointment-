@@ -51,7 +51,7 @@ const DoctorProfile = () => {
             <SubHeader title='Doctor Details' subtitle='Doctor Profile' />
             <div className="container" style={{ marginBottom: '4rem', marginTop: '6rem' }}>
                 {content}
-                <div className='p-4 rounded' style={{ marginBottom: '7rem', backgroundColor: '#f3f3f3' }}>
+                <div className='p-4 rounded' style={{ marginBottom: '7rem', backgroundColor: 'var(--surface-2)' }}>
                     <Tabs defaultActiveKey="1" items={items} />
                 </div>
             </div>

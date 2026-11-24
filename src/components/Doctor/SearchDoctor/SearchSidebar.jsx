@@ -37,14 +37,14 @@ const SearchSidebar = ({ setSearchTerm, setSorByGender, setSpecialist, setPriceR
   return (
     <div className="col-md-12 col-lg-4 col-xl-3">
 
-      <div className="p-3 rounded" style={{ background: '#f3f3f3' }}>
-        <h5 className='text-center mb-3' style={{ color: '#05335c' }}>Doctor Filter</h5>
+      <div className="p-3 rounded" style={{ background: 'var(--surface-2)' }}>
+        <h5 className='text-center mb-3' style={{ color: 'var(--text-strong)' }}>Doctor Filter</h5>
         <div className="mb-3">
           <Search placeholder="Search..." onSearch={onSearch} enterButton allowClear />
         </div>
 
         <div className='mb-3'>
-          <h6 style={{ color: '#05335c' }}>Date Range</h6>
+          <h6 style={{ color: 'var(--text-strong)' }}>Date Range</h6>
           <DatePicker
             style={{ width: "100%" }}
             format="YYYY-MM-DD HH:mm:ss"
@@ -53,27 +53,27 @@ const SearchSidebar = ({ setSearchTerm, setSorByGender, setSpecialist, setPriceR
         </div>
 
         <div className='mb-3'>
-          <h6 style={{ color: '#05335c' }}>Gender</h6>
+          <h6 style={{ color: 'var(--text-strong)' }}>Gender</h6>
           <div className='d-flex flex-column'>
             <Radio.Group options={options} onChange={onSelectGender} />
           </div>
         </div>
 
         <div className='mb-3'>
-          <h6 style={{ color: '#05335c' }}>Price Range</h6>
+          <h6 style={{ color: 'var(--text-strong)' }}>Price Range</h6>
           <Slider range defaultValue={[75, 150]} onChange={onRangeChange} />
         </div>
 
         <div className='mb-3'>
-          <h6 style={{ color: '#05335c' }}>Select Specialist</h6>
+          <h6 style={{ color: 'var(--text-strong)' }}>Select Specialist</h6>
           <div className='d-flex flex-column'>
             <Radio.Group options={doctorSpecialistOptions} onChange={onSelectSepcialist} />
           </div>
         </div>
 
-        <Button className='w-100 mt-4 mb-2' type="primary" style={{backgroundColor:'#1977cc'}} shape="round" icon={<FaSearch />} size="sm">Search</Button>
+        <Button className='w-100 mt-4 mb-2' type="primary" style={{backgroundColor:'var(--primary)'}} shape="round" icon={<FaSearch />} size="sm">Search</Button>
         {
-          Object.keys(query).length > 4 && <Button className='w-100 mt-4 mb-2' style={{backgroundColor:'#1977cc'}} onClick={resetFilter} type="primary" shape="round" icon={<FaRedoAlt />} size="sm">Reset</Button>
+          Object.keys(query).length > 4 && <Button className='w-100 mt-4 mb-2' style={{backgroundColor:'var(--primary)'}} onClick={resetFilter} type="primary" shape="round" icon={<FaRedoAlt />} size="sm">Reset</Button>
         }
       </div>
 

@@ -25,7 +25,7 @@
     transition: 1ms!important;
 }
 #header {
-    background: #fff;
+    background: var(--surface);
     transition: all 0.5s;
     z-index: 997;
     top: 40px;
@@ -47,7 +47,7 @@
 }
 
 #header .logo a {
-    color: #2c4964;
+    color: var(--text);
 }
 
 #header .logo img {
@@ -84,7 +84,7 @@
     align-items: center;
     justify-content: space-between;
     font-size: 14px;
-    color: #2c4964;
+    color: var(--text);
     white-space: nowrap;
     transition: 0.3s;
     border-bottom: 2px solid #fff;
@@ -102,8 +102,8 @@
 .navbar .active,
 .navbar .active:focus,
 .navbar li:hover>a {
-    color: #1977cc;
-    border-color: #1977cc;
+    color: var(--accent);
+    border-color: var(--accent);
 }
 
 .navbar .dropdown ul {
@@ -116,7 +116,7 @@
     z-index: 99;
     opacity: 0;
     visibility: hidden;
-    background: #fff;
+    background: var(--surface);
     box-shadow: 0px 0px 30px rgba(127, 137, 161, 0.25);
     transition: 0.3s;
 }
@@ -141,7 +141,7 @@
 .navbar .dropdown ul a:hover,
 .navbar .dropdown ul .active:hover,
 .navbar .dropdown ul li:hover>a {
-    color: #2c2e84;
+    color: var(--text);
 }
 
 .navbar .dropdown:hover>ul {
@@ -174,7 +174,7 @@
 }
 
 .mobile-nav-toggle {
-    color: #2c4964;
+    color: var(--text);
     font-size: 28px;
     cursor: pointer;
     display: none;
@@ -220,7 +220,7 @@
 .mobile-menu-nav {
     list-style: none;
     font-size: 1.2rem;
-    color: #2c2e84 !important;
+    color: var(--text) !important;
 }
 .mobile-menu-nav .icon{
     font-size: 1.3rem;

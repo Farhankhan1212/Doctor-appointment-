@@ -7,7 +7,7 @@
 }
 
 a {
-    color: #05335c;
+    color: var(--text);
     text-decoration: none !important;
 }
 
@@ -20,8 +20,8 @@ body {
     overflow-x: hidden;
     font-family: 'Poppins', sans-serif;
     height: 100%;
-    color: #272b41;
-    background-color: #f8f9fa;
+    color: var(--text);
+    background-color: var(--surface-2);
 }
 
 h1,
@@ -30,7 +30,7 @@ h3,
 h4,
 h5,
 h6 {
-    color: #272b41;
+    color: var(--text);
     font-weight: 500;
 }
 
@@ -86,8 +86,8 @@ a:focus {
 }
 
 .card-label>label {
-    background-color: #f8f9fa;
-    color: #959595;
+    background-color: var(--surface-2);
+    color: var(--text-dim);
     display: inline-block;
     font-size: 13px;
     font-weight: 500;
@@ -96,8 +96,8 @@ a:focus {
 }
 
 .card-label>input {
-    background-color: #fff;
-    border: 1px solid #dbdbdb;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 4px;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .05);
     display: block;
@@ -120,11 +120,11 @@ a:focus {
     border-radius: 50px;
     transition: 0.5s;
     color: #fff;
-    background: #1977cc;
+    background: var(--grad-primary);
 }
 
 .btn-get-started:hover {
-    background: #3291e6;
+    background: var(--grad-primary);
 }
 
 .section-title h2 {
@@ -133,7 +133,7 @@ a:focus {
     font-weight: bold;
     padding-bottom: 20px;
     position: relative;
-    color: #2c4964;
+    color: var(--text);
 }
 
 .section-title h2::before {
@@ -153,16 +153,16 @@ a:focus {
     display: block;
     width: 40px;
     height: 3px;
-    background: #1977cc;
+    background: var(--grad-primary);
     bottom: 0;
     left: calc(50% - 20px);
 }
 
 .more-btn {
     display: inline-block;
-    border: 1px solid #3291e6;
+    border: 1px solid var(--accent);
     padding: 6px 30px 8px 30px;
-    color: #3291e6;
+    color: var(--accent);
     border-radius: 50px;
     transition: all ease-in-out 0.4s;
 }
@@ -173,7 +173,7 @@ a:focus {
 
 .more-btn:hover {
     color: #fff;
-    background: #3291e6;
+    background: var(--grad-primary);
 }
 
 .custom-blog-card:hover {
@@ -190,11 +190,11 @@ a:focus {
     font-size: 20px;
     font-weight: 600;
     text-transform: uppercase;
-    color: #2c4964;
+    color: var(--text);
 }
 
 .change-photo-btn {
-    background-color: #1977cc;
+    background-color: var(--primary);
     border-radius: 50px;
     color: #fff;
     cursor: pointer;

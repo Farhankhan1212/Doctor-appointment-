@@ -1,5 +1,5 @@
 #topbar {
-    background: #fff;
+    background: var(--surface);
     height: 40px;
     font-size: 14px;
     transition: all 0.5s;
@@ -13,17 +13,17 @@
   
   #topbar .contact-info a {
     line-height: 1;
-    color: #444444;
+    color: var(--text);
     transition: 0.3s;
     text-decoration: none;
   }
   
   #topbar .contact-info a:hover {
-    color: #1977cc;
+    color: var(--accent);
   }
   
   #topbar .contact-info .contact-icon {
-    color: #1977cc;
+    color: var(--accent);
     padding-right: 4px;
     margin-left: 15px;
     line-height: 0;
@@ -34,7 +34,7 @@
   }
   
   #topbar .social-links a {
-    color: #437099;
+    color: var(--text);
     padding-left: 15px;
     display: inline-block;
     line-height: 1px;
@@ -42,7 +42,7 @@
   }
   
   #topbar .social-links a:hover {
-    color: #1977cc;
+    color: var(--accent);
   }
   
   #topbar .social-links a:first-child {

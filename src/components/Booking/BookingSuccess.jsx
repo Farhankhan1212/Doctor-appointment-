@@ -31,7 +31,7 @@ const BookingSuccess = () => {
                 {
                     data?.id ?
 
-                        <div className=" p-3" style={{ marginTop: '8rem', marginBottom: '5rem', height: '60vh', background: '#f8f9fa', maxWidth: '400px' }}>
+                        <div className=" p-3" style={{ marginTop: '8rem', marginBottom: '5rem', height: '60vh', background: 'var(--surface-2)', maxWidth: '400px' }}>
 
                             <div className='border-bottom my-2'>
                                 <FaCalendarCheck style={{ fontSize: '2.5rem' }} className='text-success' />
@@ -77,7 +77,7 @@ const BookingSuccess = () => {
                             </div>
                         </div>
                         :
-                        <div className='rounded p-3 d-flex flex-column justify-content-center align-items-center' style={{ background: "#f8f9fa", marginTop: '8rem', marginBottom: '5rem' }} >
+                        <div className='rounded p-3 d-flex flex-column justify-content-center align-items-center' style={{ background: 'var(--surface-2)', marginTop: '8rem', marginBottom: '5rem' }} >
                             <Empty />
                             <h6 className='p-2 my-3'>You will be redirect to homepage !</h6>
                         </div>

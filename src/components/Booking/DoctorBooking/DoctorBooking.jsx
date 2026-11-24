@@ -98,10 +98,13 @@ const DoctorBooking = () => {
     } = useGetAppointmentTimeQuery(
         {
             day: selectDay,
+            date: selectedDate,
             id: doctorId
         },
         {
-            skip: !selectDay || !doctorId
+            skip: !selectDay || !doctorId,
+            // a booked slot must disappear for the next patient
+            refetchOnMountOrArgChange: true
         }
     );
 
@@ -250,7 +253,7 @@ const DoctorBooking = () => {
     }
 
     if (!dIsLoading && !dIsError && time?.length === 0) {
-        dContent = <Empty description="Doctor Is not Available" />;
+        dContent = <Empty description="No free slots on this day. Please pick another date." />;
     }
 
     if (!dIsLoading && !dIsError && time?.length > 0) {
@@ -392,6 +395,9 @@ const DoctorBooking = () => {
             lastName: selectValue.lastName,
             email: selectValue.email,
             phone: selectValue.phone,
+            address: selectValue.address,
+            reasonForVisit: selectValue.reasonForVisit,
+            description: selectValue.description,
 
             scheduleDate: selectedDate,
             scheduleTime: selectTime,

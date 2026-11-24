@@ -188,11 +188,14 @@ rel(prescriptionSchema, "appointment", "Appointments", "appointmentId");
 // ---------- Favourites ----------
 const favouriteSchema = new Schema(
   {
-    doctorId: { type: ObjectId, ref: "Doctor", required: true, unique: true },
+    doctorId: { type: ObjectId, ref: "Doctor", required: true },
     patientId: { type: ObjectId, ref: "Patient" },
   },
   { ...opts, collection: "Favourites" }
 );
+// one favourite per (patient, doctor). The old schema made doctorId unique on its own,
+// which stopped a second patient from favouriting the same doctor.
+favouriteSchema.index({ doctorId: 1, patientId: 1 }, { unique: true });
 rel(favouriteSchema, "doctor", "Doctor", "doctorId");
 rel(favouriteSchema, "patient", "Patient", "patientId");
 

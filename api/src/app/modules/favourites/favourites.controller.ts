@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
-import { Favourites } from "@prisma/client";
+import { Favourites } from "../../../shared/types";
 import { FavouritesService } from "./favourites.service";
 
 const addFavourite = catchAsync(async (req: Request, res: Response) => {

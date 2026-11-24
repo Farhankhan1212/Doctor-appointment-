@@ -3,7 +3,7 @@
 	margin: 0;
 	padding: 0;
 }
-.doc-department {color: #1977cc;}
+.doc-department {color: var(--accent);}
 .doc-department img{
     width: 1.5rem;
     margin-right: 2px;
@@ -45,10 +45,10 @@
 	margin-top: 15px;
 }
 .clinic-booking a {
-    background-color: #fff;
-    border: 2px solid #1977cc;
+    background-color: var(--surface);
+    border: 2px solid var(--accent);
     border-radius: 4px;
-    color: #1977cc;
+    color: var(--accent);
     display: block;
     font-size: 14px;
     font-weight: 500;
@@ -59,22 +59,22 @@
     width: 100%;
 }
 .clinic-booking a.view-pro-btn:hover, .clinic-booking a.view-pro-btn:focus {
-	background: #1977cc; 
+	background: var(--grad-primary); 
 	color: #fff;
 }
 .clinic-booking a.apt-btn {
-    background-color: #1977cc;
+    background-color: var(--primary);
     color: #fff;
 }
 .clinic-booking a.apt-btn:hover, .clinic-booking a.apt-btn:focus {
-	background-color: #1977cc;
-	border-color: #1977cc;
+	background-color: var(--primary);
+	border-color: var(--accent);
 	color: #fff;
 }
 .load-more {
 	margin-bottom: 30px;
 }
 .overview-text {
-    color: #2c4964;
+    color: var(--text);
     font-weight: 600;
 }

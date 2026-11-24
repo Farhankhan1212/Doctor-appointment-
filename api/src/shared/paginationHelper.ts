@@ -6,11 +6,11 @@ export type IOption = {
 }
 
 type IOptionResult = {
-    page?: number | undefined;
-    limit?: number | undefined;
+    page: number;
+    limit: number;
     sortBy?: string;
     sortOrder?: any;
-    skip?: number | undefined;
+    skip: number;
 }
 
 const calculatePagination = (options: IOption): IOptionResult => {

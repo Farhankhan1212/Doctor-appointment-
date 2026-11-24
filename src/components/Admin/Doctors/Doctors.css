@@ -46,7 +46,7 @@
     padding: 0;
 }
 .activity-feed .feed-item {
-    border-left: 2px solid #e4e8eb;
+    border-left: 2px solid var(--border);
     padding-bottom: 19px;
     padding-left: 20px;
     position: relative;
@@ -64,20 +64,20 @@
 	width: 12px;
 	height: 12px;
 	border-radius: 50%;
-	background-color: #177dff;
+	background-color: var(--primary);
 }
 .activity-feed .feed-item .feed-date {
 	display: block;
 	position: relative;
-	color: #777;
+	color: var(--text-dim);
 	text-transform: uppercase;
 	font-size: 13px;
  }
 .activity-feed .feed-item .feed-text {
-	color: #777;
+	color: var(--text-dim);
 	position: relative;
 }
 .activity-feed .feed-item .feed-text a {
-    color: #333;
+    color: var(--text);
     font-weight: 600;
 }

@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { BlogService } from "./blog.service";
-import { Blogs } from "@prisma/client";
+import { Blogs } from "../../../shared/types";
 import httpStatus from "http-status";
 import pick from "../../../shared/pick";
 

@@ -42,7 +42,7 @@ const CheckoutPage = ({
                 <div className="col-md-7">
                     <div
                         className="rounded p-3"
-                        style={{ background: '#f8f9fa' }}
+                        style={{ background: 'var(--surface-2)' }}
                     >
 
                         <h5 className="mb-3">Select Payment Type</h5>
@@ -248,7 +248,7 @@ const CheckoutPage = ({
 
                     <div
                         className="rounded p-3"
-                        style={{ background: '#f8f9fa' }}
+                        style={{ background: 'var(--surface-2)' }}
                     >
 
                         {data && (
@@ -327,7 +327,7 @@ const CheckoutPage = ({
 
                                     <span
                                         className="total-cost"
-                                        style={{ color: '#1977cc' }}
+                                        style={{ color: 'var(--primary)' }}
                                     >
                                         {total}
                                     </span>

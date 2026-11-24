@@ -116,7 +116,7 @@ const Blogs = () => {
     }
     return (
         <DashboardLayout>
-            <div className="w-100 mb-3 rounded" style={{ background: '#f8f9fa' }}>
+            <div className="w-100 mb-3 rounded" style={{ background: 'var(--surface-2)' }}>
                 <Link to={`/dashboard/blogs/create`} className='d-flex justify-content-end p-3'>
                     <Button type="primary" size='middle'>Add Blog</Button>
                 </Link>

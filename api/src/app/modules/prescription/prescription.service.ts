@@ -1,245 +1,158 @@
+import mongoose from "mongoose";
 import httpStatus from "http-status";
 import ApiError from "../../../errors/apiError";
-import prisma from "../../../shared/prisma";
-import { Prescription } from "@prisma/client";
+import {
+    Appointments as AppointmentModel,
+    Doctor as DoctorModel,
+    Patient as PatientModel,
+    Prescription as PrescriptionModel,
+} from "../../../shared/models";
+import { Prescription } from "../../../shared/types";
 
-const createPrescription = async (user: any, paylaod: any): Promise<{message: string}> => {
-    const { medicine, ...others } = paylaod;
-    const { userId } = user;
-    const isDoctor = await prisma.doctor.findUnique({
-        where: {
-            id: userId
-        }
-    })
-    if (!isDoctor) { throw new ApiError(httpStatus.NOT_FOUND, 'Doctor Account is not found !!') }
+const isId = (id: any) => typeof id === "string" && mongoose.isValidObjectId(id);
 
-    const isAppointment = await prisma.appointments.findUnique({
-        where: {
-            id: paylaod.appointmentId
-        }
-    })
-    if (!isAppointment) { throw new ApiError(httpStatus.NOT_FOUND, 'Appopintment is not found !!') }
-
-    await prisma.$transaction(async (tx) => {
-        const {status, patientType, ...rest} = others;
-        await tx.appointments.update({
-            where: {
-                id: isAppointment.id
-            },
-            data: {
-                isFollowUp: paylaod.followUpDate ? true : false,
-                status: status || undefined,
-                patientType: patientType || undefined,
-                prescriptionStatus: "issued"
-            }
-        })
-        
-        const prescription = await tx.prescription.create({
-            data: {
-                ...rest,
-                doctorId: isDoctor.id,
-                patientId: isAppointment.patientId,
-                medicines: undefined
-            }
-        });
-
-        const medicinePromise = medicine.map((medicine: any) =>
-            tx.medicine.create({
-                data: {
-                    dosage: medicine.dosage,
-                    duration: medicine.duration,
-                    frequency: medicine.frequency,
-                    medicine: medicine.medicine,
-                    prescriptionId: prescription.id
-                }
-            })
-        )
-        await Promise.all(medicinePromise)
-    })
-    return {
-        message: "Successfully Prescription Created"
+const requireDoctor = async (userId: string) => {
+    const doctor = isId(userId) ? await DoctorModel.findById(userId) : null;
+    if (!doctor) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Doctor Account is not found !!");
     }
-}
-// Update Prescription and Appointment table 
-const updatePrescriptionAndAppointment = async (user: any, paylaod: any): Promise<{message: string}> => {
-    const {status, patientType,followUpdate,prescriptionId, ...others} = paylaod;
-    const { userId } = user;
-    const isDoctor = await prisma.doctor.findUnique({
-        where: {
-            id: userId
-        }
-    })
-    if (!isDoctor) { throw new ApiError(httpStatus.NOT_FOUND, 'Doctor Account is not found !!') }
+    return doctor;
+};
 
-    const isPrescribed = await prisma.prescription.findUnique({
-        where: {
-            id: prescriptionId
-        }
-    })
-    if (!isPrescribed) { throw new ApiError(httpStatus.NOT_FOUND, 'Prescription is not found !!') }
-
-    await prisma.$transaction(async (tx) => {
-        
-        await tx.appointments.update({
-            where: {
-                id: isPrescribed.appointmentId
-            },
-            data: {
-                isFollowUp: followUpdate ? true : false,
-                status: status,
-                patientType: patientType,
-            }
-        })
-        
-        await tx.prescription.update({
-            where: {
-                id: prescriptionId
-            },
-            data: {
-                ...others,
-            }
-        });
-
-    })
-    return {
-        message: "Successfully Prescription Updated"
+const stripIdentity = (data: Record<string, any> = {}) => {
+    const out = { ...data };
+    for (const key of Object.keys(out)) {
+        if (key.startsWith("$") || key === "id" || key === "_id") delete out[key];
     }
-}
+    return out;
+};
+
+const medicineFields = (m: any) => ({
+    dosage: m.dosage,
+    duration: m.duration,
+    frequency: m.frequency,
+    medicine: m.medicine,
+});
+
+const createPrescription = async (user: any, payload: any): Promise<{ message: string }> => {
+    const { medicine, status, patientType, ...rest } = payload || {};
+    const doctor = await requireDoctor(user.userId);
+
+    const appointment = isId(payload?.appointmentId) ? await AppointmentModel.findById(payload.appointmentId) : null;
+    if (!appointment) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Appopintment is not found !!");
+    }
+    if (!appointment.patientId) {
+        throw new ApiError(httpStatus.BAD_REQUEST, "This appointment has no registered patient to prescribe for !!");
+    }
+
+    const prescription = await PrescriptionModel.create({
+        ...stripIdentity(rest),
+        doctorId: doctor._id,
+        patientId: appointment.patientId,
+        medicines: (Array.isArray(medicine) ? medicine : []).map(medicineFields),
+    });
+
+    try {
+        // frontend sends `followUpdate`; older callers sent `followUpDate`
+        await AppointmentModel.updateOne(
+            { _id: appointment._id },
+            {
+                isFollowUp: !!(payload.followUpdate || payload.followUpDate),
+                ...(status ? { status } : {}),
+                ...(patientType ? { patientType } : {}),
+                prescriptionStatus: "issued",
+            }
+        );
+    } catch (error) {
+        await PrescriptionModel.deleteOne({ _id: prescription._id });
+        throw error;
+    }
+
+    return { message: "Successfully Prescription Created" };
+};
+
+// Update Prescription and Appointment together
+const updatePrescriptionAndAppointment = async (user: any, payload: any): Promise<{ message: string }> => {
+    const { status, patientType, followUpdate, prescriptionId, ...others } = payload || {};
+    const doctor = await requireDoctor(user.userId);
+
+    const prescription = isId(prescriptionId)
+        ? await PrescriptionModel.findOne({ _id: prescriptionId, doctorId: doctor._id })
+        : null;
+    if (!prescription) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Prescription is not found !!");
+    }
+
+    await AppointmentModel.updateOne(
+        { _id: prescription.appointmentId },
+        {
+            isFollowUp: !!followUpdate,
+            ...(status !== undefined ? { status } : {}),
+            ...(patientType !== undefined ? { patientType } : {}),
+        }
+    );
+
+    const { medicine, medicines, ...prescriptionFields } = stripIdentity(others);
+    prescription.set({ ...prescriptionFields, followUpdate });
+    await prescription.save();
+
+    return { message: "Successfully Prescription Updated" };
+};
 
 const getAllPrescriptions = async (): Promise<Prescription[] | null> => {
-    const result = await prisma.prescription.findMany({
-        include: {
-            appointment: {
-                select: {
-                    trackingId: true
-                }
-            }
-        }
-    });
-    return result;
-}
+    return PrescriptionModel.find()
+        .sort({ createdAt: -1 })
+        .populate({ path: "appointment", select: "trackingId" }) as any;
+};
 
 const getPrescriptionById = async (id: string): Promise<Prescription | null> => {
-    const result = await prisma.prescription.findUnique({
-        where: {
-            id: id
-        },
-        include: {
-            medicines: true,
-            appointment: {
-                select: {
-                    scheduleDate: true,
-                    scheduleTime: true,
-                    status: true,
-                    trackingId: true,
-                }
-            },
-            doctor: {
-                select: {
-                    firstName: true,
-                    lastName: true,
-                    designation: true,
-                    email: true,
-                    college: true,
-                    address: true,
-                    country: true,
-                    state: true,
-                    specialization: true
-                }
-            },
-            patient: {
-                select: {
-                    firstName: true,
-                    lastName: true,
-                    gender: true,
-                    dateOfBirth: true,
-                    email: true,
-                    bloodGroup: true,
-                    address: true,
-                    img: true,
-                    city: true,
-                }
-            }
-        }
-    });
-    return result;
-}
+    if (!isId(id)) return null;
+    return PrescriptionModel.findById(id)
+        .populate({ path: "appointment", select: "scheduleDate scheduleTime status trackingId" })
+        .populate({
+            path: "doctor",
+            select: "firstName lastName designation email college address country state specialization",
+        })
+        .populate({
+            path: "patient",
+            select: "firstName lastName gender dateOfBirth email bloodGroup address img city",
+        }) as any;
+};
 
 const getPatientPrescriptionById = async (user: any): Promise<Prescription[] | null> => {
-    const { userId } = user;
-    const isPatient = await prisma.patient.findUnique({
-        where: {
-            id: userId
-        }
-    })
-    if (!isPatient) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Patient Account is not found !!')
+    const patient = isId(user.userId) ? await PatientModel.findById(user.userId) : null;
+    if (!patient) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Patient Account is not found !!");
     }
-    const result = await prisma.prescription.findMany({
-        where: {
-            patientId: userId
-        },
-        include: {
-            doctor: {
-                select: {
-                    firstName: true,
-                    lastName: true,
-                    designation: true
-                }
-            },
-            appointment: {
-                select: {
-                    scheduleDate: true,
-                    scheduleTime: true,
-                    status: true,
-                    trackingId: true
-                }
-            }
-        }
-    })
-    return result;
-}
+    return PrescriptionModel.find({ patientId: patient._id })
+        .sort({ createdAt: -1 })
+        .populate({ path: "doctor", select: "firstName lastName designation" })
+        .populate({ path: "appointment", select: "scheduleDate scheduleTime status trackingId" }) as any;
+};
 
 const getDoctorPrescriptionById = async (user: any): Promise<Prescription[] | null> => {
-    const { userId } = user;
-    const isDoctor = await prisma.doctor.findUnique({
-        where: {
-            id: userId
-        }
-    })
-    if (!isDoctor) {
-        throw new ApiError(httpStatus.NOT_FOUND, 'Doctor Account is not found !!')
-    }
-    const result = await prisma.prescription.findMany({
-        where: {
-            doctorId: userId,
-        },
-        include: {
-            medicines: true,
-            patient: true
-        }
-    })
-    return result;
-}
+    const doctor = await requireDoctor(user.userId);
+    return PrescriptionModel.find({ doctorId: doctor._id }).sort({ createdAt: -1 }).populate("patient") as any;
+};
 
 const deletePrescription = async (id: string): Promise<any> => {
-    const result = await prisma.prescription.delete({
-        where: {
-            id: id
-        }
-    });
+    const result = isId(id) ? await PrescriptionModel.findByIdAndDelete(id) : null;
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Prescription is not found !!");
+    }
     return result;
-}
+};
 
 const updatePrescription = async (id: string, payload: Partial<Prescription>): Promise<Prescription> => {
-    const result = await prisma.prescription.update({
-        data: payload,
-        where: {
-            id: id
-        }
-    })
-    return result;
-}
+    const result = isId(id)
+        ? await PrescriptionModel.findByIdAndUpdate(id, stripIdentity(payload), { new: true, runValidators: true })
+        : null;
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Prescription is not found !!");
+    }
+    return result as any;
+};
 
 export const PrescriptionService = {
     createPrescription,
@@ -249,5 +162,5 @@ export const PrescriptionService = {
     deletePrescription,
     getPrescriptionById,
     getAllPrescriptions,
-    updatePrescriptionAndAppointment
-}
+    updatePrescriptionAndAppointment,
+};

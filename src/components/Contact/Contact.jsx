@@ -33,7 +33,7 @@ const Contact = () => {
                     <div className="row">
 
                         <div className="col-lg-4">
-                            <div className="info rounded p-3" style={{ background: '#f8f9fa' }}>
+                            <div className="info rounded p-3" style={{ background: 'var(--surface-2)' }}>
                                 <div className="d-flex mb-2 gap-2">
                                     <FaLocationArrow className='icon' />
                                     <div>
@@ -62,7 +62,7 @@ const Contact = () => {
                         </div>
 
                         <div className="col-lg-8">
-                            <div className="mb-5 p-2 rounded" style={{ background: '#f8f9fa' }}>
+                            <div className="mb-5 p-2 rounded" style={{ background: 'var(--surface-2)' }}>
                                 <form className="row form-row" onSubmit={handleSubmit(onSubmit)}>
                                     <div className="col-md-6">
                                         <div className="form-group mb-2 card-label">

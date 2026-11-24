@@ -85,7 +85,7 @@ const Reviews = () => {
         <DashboardLayout>
             <div
                 className="w-100 mb-3 rounded py-3 px-2"
-                style={{ background: '#f8f9fa' }}
+                style={{ background: 'var(--surface-2)' }}
             >
                 {content}
             </div>
