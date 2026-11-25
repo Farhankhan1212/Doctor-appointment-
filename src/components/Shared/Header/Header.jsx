@@ -32,7 +32,9 @@ const Header = () => {
         return (() => window.removeEventListener('scroll', handleScroll));
     }, [])
 
-    useEffect(() => { authChecked && setIsLogged(true) }, [authChecked]);
+    useEffect(() => {
+        setIsLogged(authChecked && !!data?.id);
+    }, [authChecked, data]);
 
     const hanldeSignOut = () => {
         loggedOut();

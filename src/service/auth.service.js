@@ -19,5 +19,5 @@ export const isLoggedIn = () => {
     return !!authToken;
 }
 export const loggedOut = () => {
-    return localStorage.removeItem(authKey)
+    return sessionStorage.removeItem(authKey)
 }

@@ -6,12 +6,12 @@ export const setLocalStorage = (key, token) => {
     if (!key || typeof window === 'undefined') {
         return ''
     }
-    return localStorage.setItem(key, token)
+    return sessionStorage.setItem(key, token)
 }
 
 export const getFromLocalStorage = (key) => {
     if (!key || typeof window === 'undefined') {
         return ''
     }
-    return localStorage.getItem(key)
+    return sessionStorage.getItem(key)
 }

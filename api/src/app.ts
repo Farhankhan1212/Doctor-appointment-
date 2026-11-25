@@ -20,10 +20,11 @@ app.use(cors({
     origin: [
         config.clientUrl,
         process.env.CLIENT_LOCAL_URL,
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
     ].filter(Boolean) as string[],
     credentials: true,
 }));
-
 // Middlewares
 app.use(CookieParser());
 app.use(express.json());
