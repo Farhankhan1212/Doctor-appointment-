@@ -1,15 +1,14 @@
+import "dotenv/config";
 import app from "./app";
 import { connectDB } from "./shared/db";
 
-let connecting: Promise<void> | null = null;
+const PORT = Number(process.env.PORT) || 5000;
 
-export default async function handler(req: any, res: any) {
-    if (!connecting) {
-        connecting = connectDB().catch((e) => {
-            connecting = null;
-            throw e;
-        });
-    }
-    await connecting;
-    return app(req, res);
-}
+connectDB()
+  .then(() => {
+    app.listen(PORT, "0.0.0.0", () => console.log(`Server running on ${PORT}`));
+  })
+  .catch((e) => {
+    console.error("STARTUP ERROR:", e);
+    process.exit(1);
+  });
