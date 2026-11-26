@@ -1,4 +1,4 @@
-import prisma from './src/shared/prisma';
+import prisma from '../api/src/shared/prisma';
 import bcrypt from 'bcrypt';
 import { UserRole } from '@prisma/client';
 
